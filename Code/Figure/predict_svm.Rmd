@@ -1,0 +1,189 @@
+---
+title: "manifold_COVID143"
+author: "Hao Wang"
+date: "7/5/2021"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+
+
+```{r setup, include=FALSE}
+# run from command line with:
+#    Rscript -e "rmarkdown::render('manifold_density_divergence.Rmd')"
+#    sbatch --exclude=scf-sm00 -p high --wrap="Rscript -e \"rmarkdown::render('manifold_density_divergence.Rmd')\""
+#    sbatch --wrap="Rscript -e \"rmarkdown::render('manifold_COVID.Rmd')\""
+
+knitr::opts_chunk$set(
+  echo = FALSE, message = FALSE, warning = FALSE
+)
+```
+
+```{r}
+
+library(dplyr)
+library(Rtsne)
+library(NMF)
+library(mclust)
+library(ggplot2)
+library(MASS)
+library(umap)
+
+load("meta.Rda")
+load("distmat_original_update.Rda")
+load("distmat_harmonyallsample.Rda")
+
+```
+
+
+```{r distance_mat}
+plot_df$patient_id = as.character(plot_df$patient_id)
+meta_sub = unique(plot_df[, c("patient_id", "Status",  "Site")])
+meta_sub$patient_id = as.character(meta_sub$patient_id)
+meta_sub$Status = as.character(meta_sub$Status)
+
+rm(plot_df)
+library(popPackage)
+
+subsamples <- meta_sub$patient_id[meta_sub$Status %in% c("Covid", "Healthy")]
+meta_sub <- meta_sub[meta_sub$patient_id %in% subsamples,]
+GMM_PCA <- dist_mat_GMM_PCA[subsamples, subsamples]
+KNN_PCA <- dist_mat_KNN_PCA[subsamples, subsamples]
+GMM_har <- dist_mat_GMM_har[subsamples, subsamples]
+KNN_har <- dist_mat_KNN_har[subsamples, subsamples]
+
+```
+
+
+# GMM:
+
+
+
+```{r}
+my.cv.svm=function(x,Kfold,folds,cost, gamma){
+#  n = nrow(x) 
+#  folds = sample(1:Kfold, n, replace=TRUE) 
+  fold.error = rep(0, Kfold) 
+  for (j in 1:Kfold){
+     train<-x[folds!=j,]
+     test<-x[folds==j,]
+     svm.fit=svm(as.factor(Status)~.-patient_id-Site,data=train,kernel="radial",cost=cost, gamma = gamma)
+     svm.predict=predict(svm.fit,newdata = test)
+     fold.error[j]=mean(svm.predict!=test$Status)
+  }
+  cv.error=sum(fold.error)/Kfold
+  return(cv.error)
+}
+
+my.cv.svm_site=function(x,Kfold,folds,cost, gamma){
+#  n = nrow(x) 
+#  folds = sample(1:Kfold, n, replace=TRUE) 
+  fold.error = rep(0, Kfold) 
+  for (j in 1:Kfold){
+     train<-x[folds!=j,]
+     test<-x[folds==j,]
+     svm.fit=svm(as.factor(Status)~.-patient_id,data=train,kernel="radial",cost=cost, gamma = gamma)
+     svm.predict=predict(svm.fit,newdata = test)
+     fold.error[j]=mean(svm.predict!=test$Status)
+  }
+  cv.error=sum(fold.error)/Kfold
+  return(cv.error)
+}
+
+svm.fun = function(df, ids, nfold, cost, gamma, withsite = TRUE){
+  training = df[ids,]
+  testing = df[-ids,]
+  folds = seq.int(nrow(training)) %>%
+     cut(breaks = nfold, labels=FALSE) %>%  
+     sample
+  my.cv.results = matrix(NA, length(cost), length(gamma))
+  for(c in 1:length(cost)){
+   for(g in 1:length(gamma)){
+     if(withsite == TRUE){
+           my.cv.results[c,g] = my.cv.svm(x=training, folds = folds,Kfold = nfold,cost = cost[c], gamma = gamma[g])
+     }else{
+       my.cv.results[c,g] = my.cv.svm_site(training, folds = folds,Kfold = nfold,cost = cost[c], gamma = gamma[g])
+     }
+
+    }
+  }
+  bestc = which.min(rowMins(my.cv.results))
+  bestg = which.min(colMins(my.cv.results))
+  cat("best cost value:", cost[bestc], "\n")
+  cat("best gamma value:", gamma[bestg], "\n")
+  cat("CV error:", my.cv.results[bestc, bestg], "\n")
+  if(withsite == TRUE){
+      svm_training = svm(as.factor(Status) ~ . - patient_id - Site, data=training, 
+          method="C-classification", kernal="radial", cost = cost[bestc], gamma = gamma[bestg])
+  }else{
+      svm_training = svm(as.factor(Status) ~ . - patient_id, data=training, 
+          method="C-classification", kernal="radial", cost = cost[bestc], gamma = gamma[bestg])
+  }
+
+
+
+  testing_pred = predict(svm_training, testing)
+  myresults = table("pred" = testing_pred, "obs" = testing$Status)
+  return(myresults)
+
+
+}
+
+```
+
+```{r}
+df_GMM_pca = plotMDS(GMM_PCA,n = 10, x = meta_sub, sample_id = "patient_id", group_id = "Status")$mds
+df_KNN_pca = plotMDS(KNN_PCA,n = 10, x = meta_sub, sample_id = "patient_id", group_id = "Status")$mds
+df_GMM_har = plotMDS(GMM_har,n = 10, x = meta_sub, sample_id = "patient_id", group_id = "Status")$mds
+df_KNN_har = plotMDS(KNN_har,n = 10, x = meta_sub, sample_id = "patient_id", group_id = "Status")$mds
+
+#df$Status = as.character(df$Status)
+```
+
+```{r}
+library(e1071)   
+# n <- nrow(meta)  # Number of observations
+#ntrain <- round(n*0.75)  # 75% for training set
+set.seed(1)
+sample_num = table(df_GMM_pca$Status)# Set seed for reproducible results
+training_num = round(sample_num*0.6)
+training_ids = c()
+for(i in unique(df_GMM_pca$Status)){
+   ids = which(df_GMM_pca$Status == i)
+   group_sample = sample(ids, training_num[i])
+   training_ids = c(training_ids, group_sample)
+}
+
+cost= 2^(-5:5)
+gamma = 10^(c(-3:3))
+```
+
+## PCA, with site as predictor:
+
+```{r}
+cat("GMM:")
+set.seed(1)
+svm.fun(df= df_GMM_pca, ids = training_ids,nfold = 5, cost = cost, gamma= gamma, withsite = TRUE)
+
+cat("KNN:")
+set.seed(1)
+svm.fun(df= df_KNN_pca, ids = training_ids,nfold = 5, cost = cost, gamma= gamma, withsite = TRUE)
+```
+
+## PCA, without site as predictor:
+
+```{r}
+cat("GMM:")
+set.seed(1)
+svm.fun(df= df_GMM_pca, ids = training_ids,nfold = 5, cost = cost, gamma= gamma, withsite = FALSE)
+
+cat("KNN:")
+set.seed(1)
+svm.fun(df= df_KNN_pca, ids = training_ids,nfold = 5, cost = cost, gamma= gamma, withsite = FALSE)
+```
+
+
+
+
