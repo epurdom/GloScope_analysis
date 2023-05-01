@@ -1,0 +1,443 @@
+---
+title: "umap_simulation"
+output: html_document
+date: "2023-04-25"
+---
+
+```{r}
+library(Seurat)
+library(ggplot2)
+library(muscat)
+library(dplyr)
+library(stringr)
+library(purrr)
+library(gtable)
+library(grid)
+library(gridExtra)
+
+
+colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", 
+                       "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+```
+
+```{r}
+
+load("../../results/simulation/data/inter_muscat_5sample.Rda")
+
+
+set.seed(1)
+sim <- simData(x, p_dd = c(0.9, 0, 0.1, 0, 0, 0),
+               nk = 8, ns = 20, nc = 1e+05,
+               lfc = 1,paired = F,
+               rel_lfc = rep(0.05,8),
+               ng = 1e4, force = TRUE,
+               probs = list(c(0.4, 0.05, 0.2, 0.05, 0.05, 0.05, 0.1, 0.1),
+                            NULL,
+                            NULL))
+
+sim = as.Seurat(sim, data = NULL)
+sim = RenameAssays(object = sim, originalexp = "RNA")
+
+
+sim  = sim %>%
+  NormalizeData(verbose = T, normalization.method = "LogNormalize")%>%
+  FindVariableFeatures(selection.method = "vst", nfeatures = 2000)%>%
+  ScaleData(verbose = T)%>%
+  RunPCA(verbose = T)%>%
+  RunUMAP(reduction = "pca", dims = 1:10)
+#save(sim, file = "../../results/COVID_143/SimfromMuscat_update.Rda")
+
+```
+
+
+```{r}
+
+patient_id =paste0("sample",c(2:3, 5:6), ".A")
+sim_sub = sim[,sim$sample_id%in% patient_id]
+sim_sub$sample_id = str_replace(sim_sub$sample_id, ".A", "")
+sim_sub$sample_id = str_replace(sim_sub$sample_id, "sample", "Sample")
+sim_sub$ref = ifelse(str_detect(sim_sub$sample_id, "2|3"), "Ref.Sample1", "Ref.Sample2")
+sim_sub$sample_id_new = ifelse(str_detect(sim_sub$sample_id, "2|5"), "Sample1", "Sample2")
+
+
+
+
+plot_df = cbind(sim_sub@meta.data, sim_sub@reductions$umap@cell.embeddings)
+
+
+p1 = plot_df[plot_df$ref == "Ref.Sample1",] %>%
+    ggplot(aes(x = UMAP_1, y = UMAP_2)) +
+    geom_point(aes(col = cluster_id)) +
+    facet_grid(ref~sample_id,switch = "y") +
+  theme_bw()+
+  theme(axis.title = element_blank(),
+        text = element_text(size = 27),
+        axis.text = element_text(size = 15),
+        axis.text.x = element_blank())+
+  labs(color = "Cluster")+
+   scale_colour_manual(values = colorBlindBlack8)+
+  xlim(-15,15)
+
+p2 = plot_df[plot_df$ref == "Ref.Sample2",] %>%
+    ggplot(aes(x = UMAP_1, y = UMAP_2)) +
+    geom_point(aes(col = cluster_id)) +
+    facet_grid(ref~sample_id, switch = "y")+
+  theme_bw()+
+  theme(axis.title = element_blank(),
+        text = element_text(size = 27),
+        axis.text = element_text(size = 15))+
+   scale_colour_manual(values = colorBlindBlack8)+
+  xlim(-15,15)
+
+
+legend = gtable_filter(ggplotGrob(p1), "guide-box") 
+
+```
+
+```{r}
+
+
+#grid.arrange(p1, p2, ncol = 1)
+pdf("../../results/supplement/svsc_original.pdf",width = 8, height = 6)
+
+grid.arrange(arrangeGrob(p1 + theme(legend.position="none"), 
+                         p2 + theme(legend.position="none"),
+                         nrow = 2,
+                         bottom = textGrob("UMAP1", vjust = 0.55, hjust =0.1,
+                                           gp=gpar(fontsize=20)),
+                         left = textGrob("UMAP2", rot = 90, vjust = 1,
+                                         gp=gpar(fontsize=20))), 
+    widths=unit.c(unit(1, "npc") ), 
+    nrow=1)
+dev.off()
+
+```
+
+```{r}
+source("muscat_sim_serials.R")
+load("../../results/simulation/data/muscat_1sample_f5s.Rda")
+
+x@rowRanges@elementMetadata$beta$cluster_id  =
+  DataFrame(apply(x@rowRanges@elementMetadata$beta$cluster_id , 2, function(x) x/2))
+
+set.seed(1)
+nk = 8
+ns = 10
+ng = 1e4
+dd = TRUE
+force = TRUE
+rel_lfc = rep(1,nk)
+paired = TRUE
+lfc = 0.05
+nc = 5000
+
+probs = list(c(0.4, 0.05, 0.2, 0.05, 0.05, 0.05, 0.1, 0.1),
+             c(0.15, 0.05, 0.1, 0.4, 0.05, 0.1, 0.05, 0.1),
+             NULL,
+             NULL)
+p_dd = c(0.9, 0, 0.1, 0, 0, 0)
+
+
+
+par_list = Step1(x, mysd = 0.13,nk,ns,ng, dd, force, rel_lfc, paired, lfc, probs, p_dd,  p_type = 0,
+                 phylo_tree =NULL, offset = NULL, cats = cats_vec,  samp_off = NULL)
+set.seed(1)
+#rm(x)
+sim = Step2(par_list = par_list, nc = nc, probs = probs, cats = cats_vec,p_ep = 0.5, p_dp = 0.3, p_dm = 0.5,
+            off_var = NULL)
+
+
+sim = as.Seurat(sim, data = NULL)
+sim = RenameAssays(object = sim, originalexp = "RNA")
+
+
+sim  = sim %>%
+  NormalizeData(verbose = T, normalization.method = "LogNormalize")%>%
+  FindVariableFeatures(selection.method = "vst", nfeatures = 2000)%>%
+  ScaleData(features = rownames(sim), verbose = T)%>%
+  RunPCA(verbose = T)%>%
+  RunUMAP(reduction = "pca", dims = 1:10)
+
+
+patient_id = c(unique(sim$sample_id[sim$group_id == "A"])[1:4])
+sim = sim[,sim$sample_id%in% patient_id]
+plot_df = cbind(sim@meta.data, sim@reductions$umap@cell.embeddings)
+
+sub_id = c(unique(plot_df$sample_id[plot_df$group_id == "A"])[1:4])
+
+plot_df_sub = plot_df[plot_df$sample_id %in% sub_id,]
+plot_df_sub$sample_id = str_replace(plot_df_sub$sample_id, ".A", "")
+plot_df_sub$sample_id = str_to_title(plot_df_sub$sample_id)
+plot_df_sub$cluster_id = str_to_title(plot_df_sub$cluster_id)
+```
+
+```{r}
+
+tmp <- ggplot(plot_df_sub, aes(UMAP_1, UMAP_2)) +
+  geom_point(aes(col = cluster_id), size = 0.5) +
+  theme_bw() +
+  facet_wrap(~sample_id) +
+  theme(legend.position = "left",
+        axis.title = element_text(size = 20),
+        axis.title.x = element_text(vjust = 0.3),
+        text = element_text(size = 27),
+        axis.text = element_text(size = 15),
+        #t, r, b, l.
+        plot.margin = unit(c(0.2,0.5,0.2,0.5),"cm")) +
+  labs(color = "Cluster")+
+  xlab("UMAP1") +
+  ylab("UMAP2")+
+  guides(colour = guide_legend(override.aes = list(size=4)))+
+     scale_colour_manual(values = colorBlindBlack8)
+
+legend <- cowplot::get_legend(tmp)
+
+pdf("../../results/supplement/sim_cluster_legend.pdf", width = 2, height = 6)
+grid.newpage()
+grid.draw(legend)
+dev.off()
+
+pdf("../../results/supplement/sd013_lfc005_umap.pdf",width = 8, height = 6)
+ggplot(plot_df_sub, aes(UMAP_1, UMAP_2)) +
+  geom_point(aes(col = cluster_id), size = 0.5) +
+  theme_bw() +
+  facet_wrap(~sample_id) +
+  theme(legend.position = "none",
+        axis.title = element_text(size = 20),
+        axis.title.x = element_text(vjust = 0.3),
+        text = element_text(size = 27),
+        axis.text = element_text(size = 15),
+        #t, r, b, l.
+        plot.margin = unit(c(0.2,0.5,0.2,0.5),"cm")) +
+  labs(color = "Cluster")+
+  xlab("UMAP1") +
+  ylab("UMAP2")+
+  guides(colour = guide_legend(override.aes = list(size=4)))+
+     scale_colour_manual(values = colorBlindBlack8)
+dev.off()
+```
+
+
+```{r}
+set.seed(1)
+nk = 8
+ns = 10
+ng = 1e4
+dd = TRUE
+force = TRUE
+rel_lfc = rep(1,nk)
+paired = TRUE
+lfc = 0.05
+nc = 5000
+
+probs = list(c(0.4, 0.05, 0.2, 0.05, 0.05, 0.05, 0.1, 0.1),
+             c(0.15, 0.05, 0.1, 0.4, 0.05, 0.1, 0.05, 0.1),
+             NULL,
+             NULL)
+p_dd = c(0.9, 0, 0.1, 0, 0, 0)
+
+
+
+par_list = Step1(x, mysd = 0.3,nk,ns,ng, dd, force, rel_lfc, paired, lfc, probs, p_dd,  p_type = 0,
+                 phylo_tree =NULL, offset = NULL, cats = cats_vec,  samp_off = NULL)
+set.seed(1)
+#rm(x)
+sim = Step2(par_list = par_list, nc = nc, probs = probs, cats = cats_vec,p_ep = 0.5, p_dp = 0.3, p_dm = 0.5,
+            off_var = NULL)
+
+
+sim = as.Seurat(sim, data = NULL)
+sim = RenameAssays(object = sim, originalexp = "RNA")
+
+
+sim  = sim %>%
+  NormalizeData(verbose = T, normalization.method = "LogNormalize")%>%
+  FindVariableFeatures(selection.method = "vst", nfeatures = 2000)%>%
+  ScaleData(features = rownames(sim), verbose = T)%>%
+  RunPCA(verbose = T)%>%
+  RunUMAP(reduction = "pca", dims = 1:10)
+
+
+patient_id = c(unique(sim$sample_id[sim$group_id == "A"])[1:4])
+sim = sim[,sim$sample_id%in% patient_id]
+plot_df = cbind(sim@meta.data, sim@reductions$umap@cell.embeddings)
+
+
+sub_id = c(unique(plot_df$sample_id[plot_df$group_id == "A"])[1:4])
+
+plot_df_sub = plot_df[plot_df$sample_id %in% sub_id,]
+plot_df_sub$sample_id = str_replace(plot_df_sub$sample_id, ".A", "")
+plot_df_sub$sample_id = str_to_title(plot_df_sub$sample_id)
+```
+
+
+```{r}
+pdf("../../results/supplement/sd03_lfc005_umap.pdf",width = 8, height = 6)
+ggplot(plot_df_sub, aes(UMAP_1, UMAP_2)) +
+  geom_point(aes(col = cluster_id), size = 0.5) +
+  theme_bw() +
+  facet_wrap(~sample_id) +
+  theme(legend.position = "none",
+        axis.title = element_text(size = 20),
+        axis.title.x = element_text(vjust = 0.3),
+        text = element_text(size = 27),
+        axis.text = element_text(size = 15),
+        #t, r, b, l.
+        plot.margin = unit(c(0.2,0.5,0.2,0.5),"cm")) +
+  labs(color = "Cluster")+
+  xlab("UMAP1") +
+  ylab("UMAP2")+
+  guides(colour = guide_legend(override.aes = list(size=4)))+
+     scale_colour_manual(values = colorBlindBlack8)
+dev.off()
+```
+
+
+```{r}
+set.seed(1)
+nk = 8
+ns = 10
+ng = 1e4
+dd = TRUE
+force = TRUE
+rel_lfc = rep(1,nk)
+paired = TRUE
+lfc = 0.05
+nc = 5000
+
+probs = list(c(0.4, 0.05, 0.2, 0.05, 0.05, 0.05, 0.1, 0.1),
+             c(0.4, 0.05, 0.2, 0.05, 0.05, 0.05, 0.1, 0.1),
+             NULL,
+             NULL)
+p_dd = c(0.9, 0, 0.1, 0, 0, 0)
+
+
+
+par_list = Step1(x, mysd = 0.13,nk,ns,ng, dd, force, rel_lfc, paired, lfc, probs, p_dd,  p_type = 0,
+                 phylo_tree =NULL, offset = NULL, cats = cats_vec,  samp_off = NULL)
+set.seed(1)
+#rm(x)
+sim = Step2(par_list = par_list, nc = nc, probs = probs, cats = cats_vec,p_ep = 0.5, p_dp = 0.3, p_dm = 0.5,
+            off_var = NULL)
+
+
+sim = as.Seurat(sim, data = NULL)
+sim = RenameAssays(object = sim, originalexp = "RNA")
+
+
+sim  = sim %>%
+  NormalizeData(verbose = T, normalization.method = "LogNormalize")%>%
+  FindVariableFeatures(selection.method = "vst", nfeatures = 2000)%>%
+  ScaleData(features = rownames(sim), verbose = T)%>%
+  RunPCA(verbose = T)%>%
+  RunUMAP(reduction = "pca", dims = 1:10)
+plot_df = cbind(sim@meta.data, sim@reductions$umap@cell.embeddings)
+levels(plot_df$group_id) = c("1", "2")
+
+tmp = ggplot(plot_df, aes(UMAP_1, UMAP_2)) +
+  geom_point(aes(col = group_id), size = 0.5) +
+  theme_bw() +
+  theme(axis.title = element_text(size = 20),
+        axis.title.x = element_text(vjust = 0.3),
+        text = element_text(size = 27),
+        axis.text = element_text(size = 15),
+        #t, r, b, l.
+        plot.margin = unit(c(0.2,0.5,0.2,0.5),"cm")) +
+  labs(color = "Group")+
+  xlab("UMAP1") +
+  ylab("UMAP2")+
+  guides(colour = guide_legend(override.aes = list(size=4)))+
+     scale_colour_manual(values = colorBlindBlack8)
+
+legend <- cowplot::get_legend(tmp)
+
+pdf("../../results/supplement/sim_group_legend.pdf", width = 2, height = 6)
+grid.newpage()
+grid.draw(legend)
+dev.off()
+```
+
+```{r}
+pdf("../../results/supplement/lfc005_umap.pdf",width = 8, height = 6)
+ggplot(plot_df[sample(seq_len(nrow(plot_df)),10000),], aes(UMAP_1, UMAP_2)) +
+  geom_point(aes(col = group_id), size = 0.5) +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title = element_text(size = 20),
+        axis.title.x = element_text(vjust = 0.3),
+        text = element_text(size = 27),
+        axis.text = element_text(size = 15),
+        #t, r, b, l.
+        plot.margin = unit(c(0.2,0.5,0.2,0.5),"cm")) +
+  xlab("UMAP1") +
+  ylab("UMAP2")+
+  guides(colour = guide_legend(override.aes = list(size=4)))+
+     scale_colour_manual(values = colorBlindBlack8)
+dev.off()
+```
+
+
+```{r}
+set.seed(1)
+nk = 8
+ns = 10
+ng = 1e4
+dd = TRUE
+force = TRUE
+rel_lfc = rep(1,nk)
+paired = TRUE
+lfc = 0.15
+nc = 5000
+
+probs = list(c(0.4, 0.05, 0.2, 0.05, 0.05, 0.05, 0.1, 0.1),
+             c(0.4, 0.05, 0.2, 0.05, 0.05, 0.05, 0.1, 0.1),
+             NULL,
+             NULL)
+p_dd = c(0.9, 0, 0.1, 0, 0, 0)
+
+
+
+par_list = Step1(x, mysd = 0.13,nk,ns,ng, dd, force, rel_lfc, paired, lfc, probs, p_dd,  p_type = 0,
+                 phylo_tree =NULL, offset = NULL, cats = cats_vec,  samp_off = NULL)
+set.seed(1)
+#rm(x)
+sim = Step2(par_list = par_list, nc = nc, probs = probs, cats = cats_vec,p_ep = 0.5, p_dp = 0.3, p_dm = 0.5,
+            off_var = NULL)
+
+
+sim = as.Seurat(sim, data = NULL)
+sim = RenameAssays(object = sim, originalexp = "RNA")
+
+
+sim  = sim %>%
+  NormalizeData(verbose = T, normalization.method = "LogNormalize")%>%
+  FindVariableFeatures(selection.method = "vst", nfeatures = 2000)%>%
+  ScaleData(features = rownames(sim), verbose = T)%>%
+  RunPCA(verbose = T)%>%
+  RunUMAP(reduction = "pca", dims = 1:10)
+plot_df = cbind(sim@meta.data, sim@reductions$umap@cell.embeddings)
+levels(plot_df$group_id) = c("1", "2")
+
+
+```
+
+
+```{r}
+pdf("../../results/supplement/lfc015_umap.pdf",width = 8, height = 6)
+ggplot(plot_df[sample(seq_len(nrow(plot_df)),10000),], aes(UMAP_1, UMAP_2)) +
+  geom_point(aes(col = group_id), size = 0.5) +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title = element_text(size = 20),
+        axis.title.x = element_text(vjust = 0.3),
+        text = element_text(size = 27),
+        axis.text = element_text(size = 15),
+        #t, r, b, l.
+        plot.margin = unit(c(0.2,0.5,0.2,0.5),"cm")) +
+  xlab("UMAP1") +
+  ylab("UMAP2")+
+  guides(colour = guide_legend(override.aes = list(size=4)))+
+     scale_colour_manual(values = colorBlindBlack8)
+dev.off()
+```
+

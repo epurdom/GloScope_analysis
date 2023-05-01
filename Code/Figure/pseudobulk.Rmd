@@ -1,0 +1,111 @@
+---
+title: "Untitled"
+author: "Hao Wang"
+date: "7/10/2022"
+output: 
+    html_document:
+        toc: true
+        toc_float: true
+        toc_collapsed: true
+        toc_depth: 3
+        number_sections: true
+        theme: cerulean
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(
+  echo = FALSE, message = FALSE, warning = FALSE
+)
+library(ggplot2)
+library(tidyr)
+library(vegan)
+library(stringr)
+library(popPackage)
+library(NMF)
+library(umap)
+library(RColorBrewer)
+
+darkcols <- bigPalette
+# choose different colors in orders
+
+colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9", "#CC79A7",
+                                "#009E73",  "#F0E442", "#0072B2", "#D55E00")  
+```
+
+# Perez2022
+
+```{r}
+load("../../results/Perez2022/batch_meta.Rda")
+levels(meta$disease_state)[which(levels(meta$disease_state) == "na")] = "normal"
+
+load("../../results/pseudobulk/pseudobulk_perez.Rda")
+
+meta$batch_id = paste0(meta$sample, "_", meta$Processing_Cohort)
+meta <- meta[match(rownames(plot_df), meta$batch_id),]
+plot_df = cbind(plot_df, meta)
+plot_df$group = str_to_title(plot_df$group)
+plot_df$disease_state = str_to_title(plot_df$disease_state)
+```
+
+
+```{r}
+pdf("../../results/supplement/perez_pseu.pdf", width = 8, height = 6)
+
+ggplot(plot_df, aes(x = PC_1, y = PC_2)) +
+  geom_point(aes(col = disease_state, shape = Processing_Cohort), size = 4)+
+  theme_bw()+
+  theme(text = element_text(size = 25),
+        axis.title.x = element_text(vjust = -1),
+        plot.margin = unit(c(0.5,0.5,1,0.5),"cm"))+
+  labs(color = "Condition", shape = "Batch")+
+  xlab("PC1")+
+  ylab("PC2")+
+  scale_color_manual(values =colorBlindBlack8)
+dev.off()
+```
+
+
+
+
+
+
+# COVID_143 data
+
+```{r}
+load("../../results/COVID_143/meta.Rda")
+meta = unique(plot_df[,c("sample_id", "Status", "Site")])
+load("../../results/pseudobulk/pseudobulk_update_sample.Rda")
+
+plot_df$Site <- meta$Site[match(rownames(plot_df), meta$sample_id,)]
+plot_df$group_id <- meta$Status[match(rownames(plot_df), meta$sample_id,)]
+
+```
+
+
+```{r}
+pdf("../../results/supplement/covid_pseudobulk.pdf", width = 8, height = 6)
+
+ggplot(plot_df, aes(x = PC_1, y = PC_2)) +
+  geom_point(aes(shape = Site,
+                 col = group_id), size =4) +
+    theme_bw() +
+    scale_shape_manual(values=c(16, 7,3))+
+  theme(text = element_text(size = 25),
+        axis.title.x = element_text(vjust = -1),
+        plot.margin = unit(c(0.5,0.5,1,0.5),"cm"))+
+  labs(color = "Status")+
+  xlab("PC1")+
+  ylab("PC2")+
+  scale_color_manual(values =colorBlindBlack8)
+
+dev.off()
+```
+
+
+
+
+
+
+
+

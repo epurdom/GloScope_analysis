@@ -1,0 +1,54 @@
+---
+title: "UMAP"
+output: html_document
+date: "2022-09-12"
+---
+```{r}
+library(ggplot2)
+library(popPackage)
+load("plot_df_UMAP.Rda")
+safe_colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77",
+                             "#117733", "#332288", "#AA4499", 
+                             "#44AA99", "#999933", "#882255",
+                             "#661100", "#6699CC", "#888888")
+colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", 
+                       "#F0E442", "#0072B2", "#D55E00", "#CC79A7")                          
+```
+
+```{r}
+set.seed(1)
+pdf("../../results/supplement/umap_pelka.pdf",width = 10, height = 6)
+ggplot(plot_df[sample(seq_len(nrow(plot_df)),50000),], aes(x = UMAP_1, y = UMAP_2))+
+  geom_point(aes(col = MMRStatusTumor), size = 0.2) +
+  scale_color_manual(values = safe_colorblind_palette) +
+  facet_wrap(~MMRStatusTumor) +
+  theme_bw() +
+  guides(colour = guide_legend(override.aes = list(size=4),
+                               title = "Condition")) +
+    theme(text=element_text(size=20),
+          axis.title.x = element_text(vjust = 0.1))+
+  xlab("UMAP1") +
+  ylab("UMAP2")
+dev.off() 
+
+```
+
+```{r}
+set.seed(1)
+pdf("../../results/supplement/umap_covid143.pdf",width = 10, height = 6)
+ggplot(plot_df[sample(seq_len(nrow(plot_df)),50000),], aes(x = UMAP_1, y = UMAP_2))+
+  geom_point(aes(col = initial_clustering), size = 0.5) +
+  scale_color_manual(values = c(safe_colorblind_palette,colorBlindBlack8)) +
+  facet_wrap(~ as.character(Site)) +
+  theme_bw() +
+  guides(colour = guide_legend(override.aes = list(size=4),
+                               title = "Cell Type")) +
+    theme(text=element_text(size=20),
+          axis.title.x = element_text(vjust = 0.1),
+          axis.text=element_text(size = 15))+
+  xlab("UMAP1") +
+  ylab("UMAP2")
+dev.off() 
+
+```
+

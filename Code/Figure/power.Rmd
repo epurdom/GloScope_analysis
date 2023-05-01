@@ -1,0 +1,435 @@
+---
+title: "power_summary"
+date: "2022-09-13"
+output: 
+    html_document:
+        toc: true
+        toc_float: true
+        toc_collapsed: true
+        toc_depth: 3
+        number_sections: true
+        theme: cerulean
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE, message = FALSE, warning = FALSE
+)
+library(kableExtra)
+library(dplyr)
+library(ggplot2)
+library(tibble)
+library(reshape2)
+library(stringr)
+library(latex2exp)
+library(gridExtra)
+
+colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", 
+                       "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+```
+
+
+```{r}
+baseline = read.csv("../../results/simulation/power/baseline.csv", row.names = 1)
+lfc_pde = read.csv("../../results/simulation/power/lfc_pde.csv", row.names = 1)
+
+```
+
+
+
+
+# baseline comparison
+
+```{r}
+power_baseline = baseline[which(baseline$lfc == 0.15),]
+power_baseline = rbind(power_baseline, lfc_pde[2,])
+power_baseline = power_baseline %>% rownames_to_column(var = "Settings")
+
+power_baseline$Settings = paste0("(", power_baseline$sigma, ", ", ifelse(power_baseline$Pi_A == power_baseline$Pi_B, "No", "Yes"), ", " ,power_baseline$lfc,")")
+power_baseline$clusdiff = ifelse(power_baseline$Pi_A == power_baseline$Pi_B, "No", "Yes")
+
+
+power_baseline$type = paste0(power_baseline$lfc, "_", power_baseline$clusdiff)
+```
+```{r}
+
+
+
+pdf("../../results/supplement/baseline_sigma.pdf", width = 8, height = 6)
+
+# Creating a plot
+
+ggplot(power_baseline, aes(x =factor(sigma), y = Power_GMM_PCA, group = type))+
+ geom_point(aes(col = clusdiff), size = 4) +
+  geom_line(aes(col = clusdiff, linetype = clusdiff), linewidth = 2)+
+  theme_bw() +
+  ylab("Power") +
+  xlab(TeX("$\\sigma")) +
+     guides(col=guide_legend(title = TeX("$\\Pi_A \\neq \\Pi_B")),
+            linetype = guide_legend(title = TeX("$\\Pi_A \\neq \\Pi_B"))) +
+  theme(text =  element_text(size = 24),
+        plot.margin = unit(c(1,1,1,1),"cm"),
+        axis.title.y = element_text(vjust=4),
+        axis.title.x = element_text(vjust=-2),
+        axis.text.x = element_text(size = 20))+
+   scale_colour_manual(values = colorBlindBlack8)
+
+# Closing the graphical device
+dev.off() 
+```
+
+
+
+
+
+# parameter comparison
+
+```{r}
+#lfc_pde = rbind(more_lfc, more_pde)
+power_lfcpde = rbind(baseline["sd013_lfc005_same",],lfc_pde)
+power_lfcpde = power_lfcpde  %>% rownames_to_column(var = "Settings")
+power_lfcpde$Settings[1:4] = paste0("pde01_", c("lfc005", "lfc010", "lfc015", "lfc020"))
+power_lfcpde$rou_DE =  paste0(as.numeric(gsub("\\D+", "", power_lfcpde$rou_DE))*10,"%")
+power_lfcpde = power_lfcpde[power_lfcpde$lfc!= 0.2,]
+  
+```
+```{r}
+pdf("../../results/fig/lfc_pde.pdf",         # File name
+    width = 8, height = 6)          # Paper size
+
+# Creating a plot
+
+ggplot(power_lfcpde, aes(x = factor(lfc), y = Power_GMM_PCA, group =rou_DE)) +
+  geom_point(aes(col = rou_DE),size = 4)+
+  geom_line(aes(col = rou_DE, linetype = rou_DE), linewidth = 2) +
+  theme_bw() +
+  ylab("Power")+
+  xlab("Log-fold Change")  +
+   guides(col=guide_legend(title="% of DE Genes"),
+          linetype=guide_legend(title="% of DE Genes"))+
+  theme(text =  element_text(size = 24),
+        plot.margin = unit(c(1,1,1,1),"cm"),
+        axis.title.y = element_text(vjust=4),
+        axis.title.x = element_text(vjust=-2),
+        axis.text.x = element_text(size = 20),
+        legend.position = "top")+
+   scale_colour_manual(values = colorBlindBlack8)
+
+# Closing the graphical device
+dev.off() 
+```
+
+
+```{r}
+
+### pca vs scvi
+
+lfc_df = power_lfcpde[power_lfcpde$rou_DE == "10%",]
+lfc_long = melt(lfc_df[, c("lfc", "Power_KNN_scvi", "Power_KNN_PCA", "Power_GMM_scvi", "Power_GMM_PCA")], id.vars = "lfc")
+lfc_long$Type = ifelse(str_detect(lfc_long$variable, "PCA"), "PCA", "ScVI")
+lfc_long$Density = ifelse(str_detect(lfc_long$variable, "GMM"), "GMM", "KNN")
+lfc_long$combine = paste0(lfc_long$Type, lfc_long$Density)
+
+pdf("../../results/supplement/lfc_comparison.pdf",         # File name
+    width = 8, height = 6) 
+ggplot(lfc_long, aes(x =factor(lfc), y = value, group = combine))+
+  geom_point()+
+  geom_line(aes(col = Type, linetype  = Density) ,linewidth = 1) +
+  theme_bw() +
+  ylab("Power")+
+  xlab("Log-fold change")+
+    theme(text =  element_text(size = 20))+
+   scale_colour_manual(values = popPackage::bigPalette)
+dev.off()
+
+
+
+```
+
+
+
+
+```{r}
+#more_s$lfc[2] =0.1
+more_s = read.csv("../../results/simulation/power/S_power.csv", row.names = 1)
+power_s = rbind(baseline["sd013_lfc005_same",],lfc_pde[c("lfc010", "lfc015"),], more_s)
+power_s= power_s %>% rownames_to_column(var = "Settings")
+
+power_s$Settings = paste0("n=",power_s$n, ",", " lfc = ",power_s$lfc)
+#power_s = power_s[-which(power_s$lfc == 0.15),]
+#power_s = power_s[-which(power_s$X2n == 60),]
+
+pdf("../../results/supplement/more_s.pdf", width = 10, height = 6)
+ggplot(power_s,  aes(x = factor(n), y = Power_GMM_PCA, group = lfc))+
+  geom_point(aes(col = factor(lfc)),size = 4)+
+  geom_line(aes(col = factor(lfc), linetype = factor(lfc)), linewidth = 2) +
+  theme_bw() +
+  ylab("Power")+ 
+  xlab("n") +
+   guides(col=guide_legend(title="Log-fold Change"),
+          linetype=guide_legend(title="Log-fold Change"))+
+  theme(text =  element_text(size = 24),
+        plot.margin = unit(c(1,1,1,1),"cm"),
+        axis.title.y = element_text(vjust=4),
+        axis.title.x = element_text(vjust=-2),
+        axis.text.x = element_text(size = 20))+
+   scale_colour_manual(values = colorBlindBlack8)
+dev.off()
+```
+
+
+
+
+```{r}
+omega_k = read.csv("../../results/simulation/power/omega_k.csv",row.names = 1)
+
+```
+
+```{r}
+omega_k$Setting = c(paste0("Largest clusters lfc: ", omega_k$lfc[1:3]*(2:4)),
+                   paste0("4 Smaller clusters: ",omega_k$lfc[4:7]* c(2,4,6,8)))
+
+omega_k$lfc_k = c( omega_k$lfc[1:3]*(2:4),omega_k$lfc[4:7]* c(2,4,6,8))
+omega_k$Compare = ifelse(str_detect(omega_k$Setting, "Smaller"), "4 Smallest Clusters", "Largest Cluster")
+
+```
+```{r}
+
+pdf("../../results/fig/omega_k.pdf",
+     width = 8, height = 6)
+
+ggplot(omega_k, aes(x =factor(lfc_k), y = Power_GMM_PCA, group = Compare))+
+  geom_point(aes(col = Compare),size = 4)+
+  geom_line(aes(col = Compare, linetype = Compare), linewidth = 2) +
+#  geom_bar(stat = "identity") +
+  theme_bw() +
+  ylab("Power") +
+  xlab("Log-fold Change for Specific Clusters")+
+  theme(text =  element_text(size = 24),
+        plot.margin = unit(c(1,1,1,1),"cm"),
+        axis.title.y = element_text(vjust=4),
+        axis.title.x = element_text(vjust=-2),
+        axis.text.x = element_text(size = 20),
+        legend.position = "top")+
+     scale_colour_manual(values = popPackage::bigPalette)
+
+dev.off()
+```
+
+
+```{r}
+power_offvar = read.csv("../../results/simulation/power/offset.csv", row.names = 1)
+power_offvar = rbind(lfc_pde["lfc015",],power_offvar)
+power_offvar = power_offvar %>% rownames_to_column(var = "Settings")
+power_offvar$Settings = paste0(power_offvar$lambda, "_", power_offvar$tau)
+
+```
+
+
+```{r}
+#write.csv(power_offvar, "offset.csv")
+pdf("../../results/supplement/offvar.pdf",
+     width = 8, height = 6)
+
+ggplot(power_offvar, aes(x = factor(delta), y = Power_GMM_PCA, group = Settings)) +
+  geom_point(aes(col = factor(tau), shape = lambda),size = 5)+
+  geom_line(aes(col = factor(tau), linetype = factor(tau)),linewidth = 2)+
+    theme_bw() +
+  ylab("Power") +
+    xlab(TeX("$\\delta$"))+
+   guides(col=guide_legend(title=TeX("$\\tau $")),
+          linetype=guide_legend(title=TeX("$\\tau $")),
+          shape = guide_legend(title = TeX("$\\bar{\\lambda}$"))) +
+  theme(text =  element_text(size = 24),
+        plot.margin = unit(c(1,1,1,1),"cm"),
+        axis.title.y = element_text(vjust=4),
+        axis.title.x = element_text(vjust=-2),
+        axis.text.x = element_text(size = 20))+
+   scale_colour_manual(values = colorBlindBlack8)
+  
+
+dev.off()
+```
+
+
+# cluster proportion comparison
+
+
+```{r}
+clus_prop = read.csv("../../results/simulation/power/cluster.csv", row.names = 1)
+
+clus_set1 = clus_prop[str_detect(rownames(clus_prop), "Setting1"),]
+power_set1_prop = data.frame("pA_pB" =rep(paste0(clus_set1$Pi_A1, " vs ", clus_set1$Pi_B1),each = 8*2),
+                             "Group" = rep(rep(c("A", "B"),each= 8), nrow(clus_set1)),
+                             "cluster" = rep(paste0("cluster_",1:8),nrow(clus_set1)),
+                             "Proportion" = c(eval(parse(text = paste0("c(", clus_set1$Pi_A[1],",",clus_set1$Pi_B[1], ")"))),
+                                              eval(parse(text = paste0("c(", clus_set1$Pi_A[2],",",clus_set1$Pi_B[2], ")"))),
+                                              eval(parse(text = paste0("c(", clus_set1$Pi_A[3],",",clus_set1$Pi_B[3], ")"))),
+                                              eval(parse(text = paste0("c(", clus_set1$Pi_A[4],",",clus_set1$Pi_B[4], ")")))))
+
+A = ggplot(power_set1_prop, aes(x = Group, y = Proportion, fill = cluster, group = Group)) +
+  geom_bar(stat="identity") +
+  facet_wrap(~factor(pA_pB), ncol = 4) +
+  theme_classic()+
+    scale_fill_manual(values = popPackage::bigPalette[2:30])+
+  theme(legend.position = "none",
+        text = element_text(size = 20),
+        axis.title.x = element_text(size = 25),
+                axis.title.y = element_text(size = 25))
+
+
+clus_set1$pA_pB = paste0(clus_set1$Pi_A1, " vs ", clus_set1$Pi_B1)
+power_long <- melt(clus_set1[,str_detect(colnames(clus_set1), "Power")|colnames(clus_set1) == "pA_pB"], id.vars = "pA_pB")
+
+power_long$Density = ifelse(str_detect(power_long$variable, "KNN"), "KNN", ifelse(str_detect(power_long$variable, "GMM"), "GMM", "Cluster"))
+
+power_long$dim = unlist(lapply(str_split(power_long$variable, "_"), function(x) x[3]))
+B =ggplot(power_long[power_long$dim != "true",], aes(x =factor(pA_pB), y = value, group = variable))+
+  geom_point(aes(col = dim),size = 3) +
+  geom_line(aes(col = dim, linetype  = Density), size = 1)+
+  theme_bw() +
+  ylab("Power") +
+    xlab(TeX("$\\Pi_{A,1}\\ vs\\ \\Pi_{B,1}$")) +
+   guides(col="none") +
+  theme(legend.position = "top",
+        text = element_text(size = 20),
+        axis.title.x = element_text(size = 25, vjust = 0.1),
+        axis.title.y = element_text(size = 25),
+        axis.text.x = element_blank())+
+     scale_colour_manual(values = popPackage::bigPalette)
+
+B_gmm =ggplot(power_long[power_long$dim =="PCA" & power_long$Density == "GMM",], aes(x =factor(pA_pB), y = value, group = variable))+
+  geom_point(size = 3) +
+  geom_line(linewidth = 1)+
+  theme_bw() +
+  ylab("Power") +
+    xlab(TeX("$\\Pi_{A,1}\\ vs\\ \\Pi_{B,1}$")) +
+   guides(col="none") +
+  theme(legend.position = "top",
+        text = element_text(size = 20),
+                axis.text.x = element_blank(),
+        axis.title.x = element_text(size = 25,vjust = 0.1),
+                axis.title.y = element_text(size = 25))+
+     scale_colour_manual(values = popPackage::bigPalette)
+
+```
+
+```{r}
+#clus_prop = do.call(rbind, clus_list)
+clus_set3 = clus_prop[str_detect(rownames(clus_prop), "Setting3"),]
+power_set3_prop = data.frame("pA_pB" =rep(paste0(clus_set3$Pi_A1, " vs ", clus_set3$Pi_B1),each = 8*2),
+                             "Group" = rep(rep(c("A", "B"),each= 8), nrow(clus_set3)),
+                             "cluster" = rep(paste0("cluster_",1:8),nrow(clus_set3)),
+                             "Proportion" = c(eval(parse(text = paste0("c(", clus_set3$Pi_A[1],",",clus_set3$Pi_B[1], ")"))),
+                                              eval(parse(text = paste0("c(", clus_set3$Pi_A[2],",",clus_set3$Pi_B[2], ")"))),
+                                              eval(parse(text = paste0("c(", clus_set3$Pi_A[3],",",clus_set3$Pi_B[3], ")")))))
+
+C = ggplot(power_set3_prop, aes(x = Group, y = Proportion, fill = cluster, group = Group)) +
+  geom_bar(stat="identity") +
+  facet_wrap(~factor(pA_pB), ncol = 4) +
+  theme_classic()+
+  ylab("")+
+    scale_fill_manual(values = popPackage::bigPalette[2:30])+
+  theme(legend.position = "none",
+        text = element_text(size = 20),
+        axis.title.x = element_text(size = 25))
+
+
+clus_set3$pA_pB = paste0(clus_set3$Pi_A1, " vs ", clus_set3$Pi_B1)
+power_long_3 <- melt(clus_set3[,str_detect(colnames(clus_set3), "Power")|colnames(clus_set3) == "pA_pB"], id.vars = "pA_pB")
+
+power_long_3$density = ifelse(str_detect(power_long_3$variable, "KNN"), "KNN", ifelse(str_detect(power_long_3$variable, "GMM"), "GMM", "Cluster"))
+
+power_long_3$dim = unlist(lapply(str_split(power_long_3$variable, "_"), function(x) x[3]))
+power_long_3$dim = ifelse(power_long_3$dim == "scvi", "scVI", power_long_3$dim)
+D =ggplot(power_long_3[power_long_3$dim != "true",], aes(x =factor(pA_pB), y = value, group = variable))+
+  geom_point(aes(col = dim),size = 3) +
+  geom_line(aes(col = dim, linetype = density), linewidth =1)+
+  theme_bw() +
+  ylab("Power") +
+    xlab(TeX("$\\Pi_{A,1}\\ vs\\ \\Pi_{B,1}$")) +
+   guides(col=guide_legend(title="Dimension Reduction"),
+          linetype = "none")+
+  theme(legend.position = "top",
+        text = element_text(size = 20),
+        axis.title.x = element_text(size = 25, vjust = 0.1),
+        axis.text.x = element_blank())+
+  ylab("")+
+     scale_colour_manual(values = popPackage::bigPalette)
+
+D_gmm =ggplot(power_long_3[power_long_3$dim =="PCA"& power_long_3$density == "GMM",], aes(x =factor(pA_pB), y = value, group = variable))+
+  geom_point(size = 3) +
+  geom_line(linewidth = 1)+
+  theme_bw() +
+  ylab("Power") +
+    xlab(TeX("$\\Pi_{A,1}\\ vs\\ \\Pi_{B,1}$")) +
+   guides(col=guide_legend(title="Dimension Reduction"),
+          linetype = "none")+
+  theme(legend.position = "none",
+        text = element_text(size = 20),
+        axis.text.x = element_blank(),
+        axis.title.x = element_text(size = 25,vjust = 0.1))+
+  ylab("")+
+     scale_colour_manual(values = popPackage::bigPalette)
+
+```
+
+
+```{r}
+pdf("../../results/supplement/cluster_power.pdf",width = 14, height = 6)
+
+grid.arrange(B,D,A,C, ncol = 2)
+
+dev.off()
+
+pdf("../../results/fig/cluster_GMMPCA.pdf",width = 14, height = 6)
+
+grid.arrange(B_gmm,D_gmm,A,C, ncol = 2)
+
+dev.off()
+```
+
+
+```{r}
+sil_list = list()
+
+for(i in list.files("../../results/simulation/cluster_sil/")){
+  load(paste0("../../results/simulation/cluster_sil/",i))
+  sil_list[[i]] = sil_score
+}
+tmp_name = names(sil_list)
+tmp_dim = ifelse(str_detect(tmp_name, "pca"), "PCA", "scVI")
+
+tmp_unit = ifelse(str_detect(tmp_name, "clus"), "Est.Cluster", ifelse(str_detect(tmp_name, "sam"), "Sample", "True Cluster"))
+
+tmp_name = paste0(tmp_dim, ", ", tmp_unit)
+
+
+
+test = do.call(cbind, sil_list)
+colnames(test) = tmp_name
+test_long = melt(test)
+test_long$Type = unlist(lapply(str_split(test_long$Var2, ","), function(x) x[2]))
+test_long$dim = unlist(lapply(str_split(test_long$Var2, ","), function(x) x[1]))
+sil_1 = ggplot(test_long, aes(x = Type, y = value)) +
+  geom_boxplot(aes(col = Type)) +
+  facet_wrap(~dim, scale = "free_x")+
+    theme_classic()+
+   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=0.5),
+         text =  element_text(size = 20),
+         legend.position = "top") +
+  xlab("Type") +
+  ylab("Silhouette Score")+
+  scale_colour_manual(values = colorBlindBlack8)
+sil_1
+```
+
+```{r}
+pdf("../../results/supplement/sil_setting1_A_update.pdf",         # File name
+    width = 8, height = 6)          # Paper size
+
+# Creating a plot
+sil_1
+# Closing the graphical device
+dev.off() 
+```

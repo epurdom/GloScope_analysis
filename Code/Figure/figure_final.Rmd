@@ -1,0 +1,455 @@
+---
+title: "Untitled"
+author: "Hao Wang"
+date: "7/10/2022"
+output: 
+    html_document:
+        toc: true
+        toc_float: true
+        toc_collapsed: true
+        toc_depth: 3
+        number_sections: true
+        theme: cerulean
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(
+  echo = FALSE, message = FALSE, warning = FALSE
+)
+library(ggplot2)
+library(tidyr)
+library(vegan)
+library(stringr)
+library(popPackage)
+library(NMF)
+library(umap)
+library(RColorBrewer)
+library(GGally)
+library(grid)
+library(gridExtra) 
+
+# sbatch -p jsteinhardt --wrap="Rscript -e \"rmarkdown::render('paper_figures.Rmd')\""
+#library(ggplotify)
+#library(patchwork)
+darkcols <- bigPalette
+
+colfunc <- colorRampPalette(c("white", "blue1", "purple","red")) # 
+    
+color2 <- bigPalette[17:20]
+
+colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9","#CC79A7", "#009E73", 
+                       "#F0E442", "#0072B2", "#D55E00")
+safe_colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77",
+                             "#117733", "#332288", "#AA4499", 
+                             "#44AA99", "#999933", "#882255",
+                             "#661100", "#6699CC", "#888888")                       
+                       
+#https://stackoverflow.com/questions/57153428/r-plot-color-combinations-that-are-colorblind-accessible
+```
+
+
+# Allenmouse
+
+```{r}
+meta = readRDS("../../data/Processed_Datasets/allenMouse/metadata/allenMouse_default_metadata.Rds")
+meta <- unique(meta[,c("patient", "sample", "group","joint_region_label")])
+dist_mat <- readRDS("../../results/Processed_Datasets/allenMouse/allenMouse_default/allenMouse_default_dist_mat.Rds")
+meta$joint_region_label[which(meta$joint_region_label == "RHP")] = "PPP-SP"
+
+meta$`brain region` <- ifelse(meta$joint_region_label %in% c("HIP","ENT", "PPP-SP"), "HFP", "CTX")
+meta$joint_region_label[which(meta$joint_region_label ==  "SSs-GU-VISC-AIp")] = "SSs-GU-VISC-AIp "
+
+```
+
+
+
+## heatmap
+
+
+```{r}
+#dist_mat = dist_mat_GMM_PCA
+pdf("../../results/fig/allenmouseheatmap_GMM.pdf", width = 10, height = 8, onefile = FALSE)
+aheatmap(dist_mat[meta$donor_label,meta$donor_label], color = colfunc(51),
+         annCol = list("Categories" = meta$joint_region_label,
+                       "Categories" = meta$joint_region_label,
+                       "Categories" = meta$joint_region_label,
+                       "Brain Regions" = meta$`brain region`,
+                       "Brain Regions" = meta$`brain region`,
+                       "Brain Regions" = meta$`brain region`),
+         annColors = list('Categories' = c(safe_colorblind_palette, colorBlindBlack8),
+                          "Brain Regions" = colorBlindBlack8[7:8]),
+         Colv = T, Rowv = FALSE,
+         labRow = rep("", nrow(dist_mat)),
+         labCol = rep("", nrow(dist_mat)),
+         fontsize = 19, main = "",
+         treeheight = 60)
+dev.off()
+```
+
+
+## MDS
+
+
+
+
+```{r}
+
+df <- plotMDS(sqrt(dist_mat_GMM_PCA),n = 2, x = meta, sample_id = "donor_label", group_id = "joint_region_label")$mds
+pdf("../../results/fig/allenmousemds_GMM_sqrt.pdf", width = 7, height = 7)
+ggplot(df, aes(x = Coordinate1, y = Coordinate2))+
+ geom_point(aes(col = joint_region_label, shape = `brain region`),size = 5) +
+  scale_shape_manual(values=c(16, 3))+
+  scale_color_manual(values=c(safe_colorblind_palette,colorBlindBlack8)) +
+    theme_bw()  +
+  guides(color = "none",
+         shape = guide_legend(title = "Brain Regions"))+
+#    guides(color=guide_legend(title="Categories")) +
+  theme(text= element_text(size = 30),
+        axis.title.x = element_text(vjust = -1),
+        legend.position = "top",
+        plot.margin = unit(c(0.5,0.5,0.5,0.1),"cm"))
+
+dev.off()
+```
+
+
+
+# rahs data 12 samples
+
+
+```{r }
+meta = readRDS("../../data/Processed_Datasets/rash12/metadata/rash12_default_metadata.Rds")
+meta <- unique(meta[, c("patient", "group", "sample")])
+dist_mat <- readRDS("../../results/Processed_Datasets/rash12/rash12_default/rash12_default_dist_mat.Rds")
+#meta$group = meta$tissue
+meta$group[which(meta$group == "psoriasis")] = "trunk (psoriasis) "
+meta$group[which(meta$group == "trunk")] = "trunk (normal)"
+meta$group = str_to_title(meta$group)
+```
+
+## heatmap
+
+
+```{r}
+
+pdf("../../results/fig/rash_s12_heatmap_GMM.pdf", width = 9, height = 6, onefile =FALSE)
+aheatmap(dist_mat_GMM_PCA, color = colfunc(51),
+         annCol = list("Tissue Source" = meta$group,
+                       "Tissue Source" = meta$group,
+                       "Tissue Source" = meta$group),
+         annColors = list("Tissue Source" = colorBlindBlack8),
+         Colv = T, Rowv = FALSE,
+         labRow = rep("", nrow(meta)), labCol = rep("", nrow(meta)),fontsize = 19, main = "", treeheight = 40)
+
+dev.off()
+```
+
+
+
+
+```{r}
+df = plotMDS(sqrt(dist_mat_GMM_PCA),n = 2, x = meta, sample_id = "sample", group_id = "group")$mds
+
+pdf("../../results/fig/rash_s12_mds_GMM_sqrt.pdf", width = 7, height = 6)
+
+ggplot(df, aes(x = Coordinate1, y = Coordinate2)) +
+  geom_point(aes(col = group), size = 5) +
+  theme_bw() + 
+  theme(text = element_text(size = 27),
+        legend.position = "none",
+        plot.margin = unit(c(0.5,1,0.5,1),"cm"),
+        axis.title.x = element_text(vjust = -1),
+        axis.title.y = element_text(vjust = 2)) +
+  scale_color_manual(values=colorBlindBlack8)
+dev.off()
+
+```
+
+
+# COVID_143
+
+```{r}
+meta = readRDS("../../data/Processed_Datasets/covid143/metadata/covid143_default_metadata.Rds")
+meta <- unique(meta[, c("patient", "group", "sample", "Site")])
+dist_mat <- readRDS("../../results/Processed_Datasets/covid143/covid143_default/covid143_default_dist_mat.Rds")
+
+levels(meta$Site)[1] = "Cambridge "
+```
+
+## all patients
+
+
+```{r}
+pdf("../../results/supplement/covid143heatmap_GMM.pdf",         # File name
+    width = 8, height = 6, onefile = FALSE)  
+aheatmap(dist_mat_GMM_PCA[meta$patient_id, meta$patient_id], color = colfunc(51),
+         annCol = list(Status = meta$Status,
+                       Status = meta$Status,
+                       Status = meta$Status,
+                       Site = meta$Site,
+                       Site = meta$Site,
+                       Site = meta$Site),
+         annColors = list(Status = safe_colorblind_palette,
+                          Site = colorBlindBlack8),
+         labRow = rep("", nrow(meta)), labCol = rep("", nrow(meta)),
+         Colv = T, Rowv = FALSE,
+         fontsize = 18,
+         main = "")
+
+dev.off()
+
+df = plotMDS(sqrt(dist_mat_GMM_PCA),n = 2, x = meta, sample_id = "patient_id", group_id = "Status")$mds
+covid_legend = ggplot(df, aes(x = Coordinate1, y = Coordinate2)) + 
+  geom_point(aes(col = Status,
+                 shape = Site), size =4) +
+      scale_shape_manual(values=c(16, 7,3))+
+  scale_color_manual(values=colorBlindBlack8) +
+    theme_bw() +
+  theme(text = element_text(size = 20))+
+    guides(color = guide_legend(order=1),
+         shape = guide_legend(order=2))
+legend <- cowplot::get_legend(covid_legend)
+
+
+pdf("../../results/fig/covid143_legend.pdf", width = 2, height = 5)
+grid.newpage()
+grid.draw(legend)
+dev.off()
+
+pdf("../../results/fig/covid143allGMMPCA.pdf", width = 7, height = 6)
+
+ggplot(df, aes(x = Coordinate1, y = Coordinate2)) + 
+  geom_point(aes(shape = Site,
+                 col = Status), size =4) +
+  scale_color_manual(values=colorBlindBlack8) +
+    theme_bw() +
+    scale_shape_manual(values=c(16, 7,3))+
+  theme(text = element_text(size = 25),
+        legend.position = "none",
+        axis.title.x = element_text(vjust = -0.5))
+
+dev.off()
+
+
+
+```
+
+
+## COVID and healthy patients
+
+```{r}
+subsamples <- meta$patient_id[meta$Status %in% c("Covid", "Healthy")]
+meta_sub <- meta[meta$patient_id %in% subsamples,]
+dist_mat_sub <- dist_mat_GMM_PCA[subsamples, subsamples]
+
+
+```
+
+
+
+
+
+
+
+
+```{r}
+
+
+
+df_sqrt = plotMDS(sqrt(dist_mat_sub),n = 2, x = meta_sub, sample_id = "patient_id", group_id = "Status")$mds
+pdf("../../results/fig/covid143GMMpca.pdf", width = 7, height = 6)
+ggplot(df_sqrt, aes(x = Coordinate1, y = Coordinate2)) + 
+  geom_point(aes(shape = Site,
+                 col = Status), size =4) +
+  scale_color_manual(values=colorBlindBlack8) +
+    theme_bw() +
+    scale_shape_manual(values=c(16, 7,3))+
+  theme(text = element_text(size = 25),
+        legend.position = "none",
+        axis.title.x = element_text(vjust = -0.5))
+
+
+dev.off()
+```
+
+
+
+# COVID Lung atlas
+
+
+```{r}
+meta = readRDS("../../data/Processed_Datasets/covidLung/metadata/covidLung_default_metadata.Rds")
+meta <- unique(meta[, c("patient", "group", "sample")])
+dist_mat <- readRDS("../../results/Processed_Datasets/covidLung/covidLung_default/covidLung_default_dist_mat.Rds")
+#meta <- data.frame("sample" = colnames(dist_mat_GMM_PCA))
+
+meta$condition <- ifelse(str_detect(meta$sample, "cov"), "COVID", "Normal")
+
+meta <- data.frame("sample" = colnames(dist_mat_GMM_PCA))
+```
+
+## mds
+
+
+
+```{r}
+df = plotMDS(sqrt(dist_mat_GMM_PCA),n = 2, x = meta, sample_id = "sample", group_id = "condition")$mds
+
+pdf("../../results/fig/COVID_lung_mds_GMM_sqrt.pdf", width = 8, height = 6)
+
+ggplot(df, aes(x = Coordinate1, y = Coordinate2))+
+  geom_point(aes(col = condition), size = 5)+
+  labs(color = "Types")+    
+  theme_bw()+
+  theme(text = element_text(size = 30),
+        axis.title.x = element_text(vjust=  -0.6))+
+    scale_color_manual(values=bigPalette)
+
+dev.off()
+
+```
+
+
+# Pelka2021
+
+
+```{r}
+meta = readRDS("../../data/Processed_Datasets/pelka/metadata/pelka_default_metadata.Rds")
+meta <- unique(meta[, c("patient", "group", "sample")])
+dist_mat <- readRDS("../../results/Processed_Datasets/pelka/pelka_default/pelka_default_dist_mat.Rds")
+
+meta <- unique(plot_df[, c("PatientTypeID", "MMRStatusTumor")])
+meta = meta[meta$PatientTypeID %in% rownames(dist_mat_GMM_PCA_pat),]
+```
+
+
+## MDS
+
+
+```{r}
+df = plotMDS(sqrt(dist_mat_GMM_PCA_pat),n = 2, x = meta, sample_id = "PatientTypeID", group_id = "MMRStatusTumor")$mds
+pdf("../../results/fig/pelka_GMM_mds_sqrt.pdf", width = 8, height = 6)
+ggplot(df, aes(x = Coordinate1, y = Coordinate2))+
+  geom_point(aes(col = MMRStatusTumor), size = 5)+
+  labs(color = "Types")+
+    theme_bw()+
+  theme(text = element_text(size = 30),
+        axis.title.x = element_text(vjust = -0.6))+
+    scale_color_manual(values=colorBlindBlack8)
+    
+
+dev.off()
+```
+```{r eval = F}
+meta_sub = meta[meta$MMRStatusTumor != "Normal",]
+dist_mat_sub = dist_mat_GMM_PCA_pat[meta_sub$PatientTypeID, meta_sub$PatientTypeID]
+
+df = plotMDS(sqrt(dist_mat_sub),n = 2, x = meta_sub, sample_id = "PatientTypeID", group_id = "MMRStatusTumor")$mds
+pdf("../../results/fig/pelka_GMM_mds_sqrt_sub.pdf", width = 8, height = 6)
+ggplot(df, aes(x = Coordinate1, y = Coordinate2))+
+  geom_point(aes(col = MMRStatusTumor), size = 5)+
+  labs(color = "Types")+
+    theme_bw()+
+  theme(text = element_text(size = 30))+
+    scale_color_manual(values=colorBlindBlack8)
+    
+
+dev.off()
+```
+
+```{r}
+
+df = plotMDS(sqrt(dist_mat_GMM_PCA_pat),n = 10, x = meta, sample_id = "PatientTypeID", group_id = "MMRStatusTumor")$mds
+df$MMRStatusTumor = as.factor(df$MMRStatusTumor)
+pdf("../../results/supplement/pelka_mds5.pdf",width = 8, height = 6)
+
+pairs(df[,paste0("Coordinate",1:5)],
+      col =colorBlindBlack8[df$MMRStatusTumor],oma=c(4,4,6,15))
+par(xpd=TRUE)
+legend("bottomright", fill = colorBlindBlack8, legend =c("MMRd","MMRp","Normal"))
+
+dev.off()
+
+
+```
+```{r}
+library(umap)
+pelka_umap = umap(df[,paste0("Coordinate",1:10)])$layout
+colnames(pelka_umap) = paste0("UMAP_",1:2)
+pelka_umap = cbind(pelka_umap, df)
+pdf("../../results/supplement/pelka_umap.pdf",width = 8, height = 6)
+ggplot(pelka_umap, aes(x = UMAP_1, y = UMAP_2))+
+  geom_point(aes(col = MMRStatusTumor))+
+  theme_bw()+
+  theme(text = element_text(size = 20))+
+  labs(color = "Types")
+dev.off()
+```
+
+
+# Perez2022
+
+```{r}
+
+meta = readRDS("../../data/Processed_Datasets/pelka/metadata/pelka_default_metadata.Rds")
+meta <- unique(meta[, c("patient", "group", "sample")])
+levels(meta$group)[which(levels(meta$group) == "na")] = "normal"
+meta$batch_id = 
+dist_mat <- readRDS("../../results/Processed_Datasets/pelka/pelka_default/pelka_default_dist_mat.Rds")
+meta$disease_state = str_to_title(meta$disease_state)
+
+#meta$batch_id = paste0(meta$donor_uuid, "_", meta$Processing_Cohort)
+#levels(meta$disease_state)[which(levels(meta$disease_state) == "na")] = "normal"
+```
+
+
+## MDS
+
+
+```{r }
+
+data = plotMDS(sqrt(dist_mat_GMM),n = 2, x = meta, sample_id = "batch_id", group_id = "disease_status")$mds
+perez_legend = ggplot(data, aes(x = Coordinate1, y = Coordinate2)) +
+  geom_point(aes(col = disease_state, shape = Processing_Cohort),
+             size = 4)+
+  theme_bw()+
+  theme(text = element_text(size = 20))+
+  labs(color = "Condition", shape = "Batch")+
+  scale_color_manual(values=colorBlindBlack8)+
+      guides(color = guide_legend(order=1),
+         shape = guide_legend(order=2))
+legend <- cowplot::get_legend(perez_legend)
+
+
+pdf("../../results/fig/perez_legend.pdf", width = 2, height = 5)
+grid.newpage()
+grid.draw(legend)
+dev.off()
+
+pdf("../../results/fig/perez_GMMpca_sqrt.pdf", width = 7, height = 6)
+ggplot(data, aes(x = Coordinate1, y = Coordinate2), size = 2) +
+  geom_point(aes(col = disease_state, shape = Processing_Cohort),
+             size = 4)+
+  scale_color_manual(values=colorBlindBlack8) +
+    theme_bw() +
+  theme(text = element_text(size = 25),
+        legend.position = "none",
+        axis.title.x = element_text(vjust = -0.5))
+dev.off()
+
+pdf("../../results/fig/perez_GMMhar_sqrt.pdf", width = 7, height = 6)
+data = plotMDS(sqrt(dist_mat_GMM_har),n = 2, x = meta, sample_id = "batch_id", group_id = "disease_state")$mds
+ggplot(data, aes(x = Coordinate1, y = Coordinate2)) +
+  geom_point(aes(col = disease_state, shape = Processing_Cohort), size = 4)+
+  scale_color_manual(values=colorBlindBlack8) +
+    theme_bw() +
+  theme(text = element_text(size = 25),
+        legend.position = "none",
+        axis.title.x = element_text(vjust = -0.5))
+dev.off()
+
+
+```
+
+

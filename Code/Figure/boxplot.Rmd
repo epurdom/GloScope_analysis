@@ -1,0 +1,373 @@
+---
+title: "ave boxplot"
+date: "2023-02-23"
+output: 
+    html_document:
+        toc: true
+        toc_float: true
+        toc_collapsed: true
+        toc_depth: 3
+        number_sections: true
+        theme: cerulean
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set( echo = FALSE, message = FALSE, warning = FALSE)
+
+library(stringr)
+library(reshape2)
+library(ggplot2)
+library(latex2exp)
+```
+
+
+```{r}
+load("../../results/simulation/boxplot/lfcpde_b_dist.Rda")
+
+plot_df = do.call(cbind, lfc_pde)
+
+
+long = melt(plot_df)
+long$lfc = as.numeric(str_replace(unlist(lapply(str_split(long$Var2, "_"), function(x) x[2])), "lfc", ""))/100
+
+long$pde = paste0(as.numeric(str_replace(unlist(lapply(str_split(long$Var2, "_"), function(x) x[1])), "pde", ""))*10, "% DE Genes")
+
+long$compare = unlist(lapply(str_split(long$Var2, "_"), function(x) x[3]))
+long$dens = ifelse(str_detect(long$compare, "gmm"), "GMM", "KNN")
+long$dim = ifelse(str_detect(long$compare, "scvi"), "ScVI", "PCA")
+
+```
+
+```{r}
+
+pdf("../../results/supplement/boxplot_lfcpde_knnpca.pdf", width = 8, height = 6)
+ggplot(long[long$dens == "KNN" & long$dim == "PCA",], aes(x = lfc, y = value, group = lfc)) +
+  geom_boxplot()+
+  facet_wrap(~pde, scale = "free_x") +
+  ylab("Average Between Group Difference") +
+  xlab("Log-fold Change")+
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text.x = element_text(angle = 45, vjust = 0.5,size = 20),
+        #t, r, b, l.
+        plot.margin = unit(c(1,1,1,1),"cm"),
+        axis.title.y = element_text(vjust=4,hjust = 0.64,size = 27),
+        axis.title.x = element_text(vjust=-2, size = 29))
+
+dev.off()
+
+pdf("../../results/supplement/boxplot_lfcpde_gmmpca.pdf", width = 8, height = 6)
+ggplot(long[long$dens == "GMM" & long$dim == "PCA",], aes(x = lfc, y = value, group = lfc)) +
+  geom_boxplot()+
+  facet_wrap(~pde, scale = "free_x") +
+  ylab("Average Between Group Difference") +
+  xlab("Log-fold Change")+
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text.x = element_text(angle = 45, vjust = 0.5,size = 20),
+        #t, r, b, l.
+        plot.margin = unit(c(1,1,1,1),"cm"),
+        axis.title.y = element_text(vjust=4,hjust = 0.64,size = 27),
+        axis.title.x = element_text(vjust=-2, size = 29))
+
+dev.off()
+
+pdf("../../results/supplement/boxplot_lfcpde_gmmscvi.pdf", width = 8, height = 6)
+ggplot(long[long$dens == "GMM" & long$dim == "ScVI",], aes(x = lfc, y = value, group = lfc)) +
+  geom_boxplot()+
+  facet_wrap(~pde, scale = "free_x") +
+  ylab("Average Between Group Difference") +
+  xlab("Log-fold Change")+
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text.x = element_text(angle = 45, vjust = 0.5,size = 20),
+        #t, r, b, l.
+        plot.margin = unit(c(1,1,1,1),"cm"),
+        axis.title.y = element_text(vjust=4,hjust = 0.64,size = 27),
+        axis.title.x = element_text(vjust=-2, size = 29))
+dev.off()
+
+pdf("../../results/supplement/boxplot_lfcpde_knnscvi.pdf", width = 8, height = 6)
+ggplot(long[long$dens == "KNN" & long$dim == "ScVI",], aes(x = lfc, y = value, group = lfc)) +
+  geom_boxplot()+
+  facet_wrap(~pde, scale = "free_x") +
+  ylab("Average Between Group Difference") +
+  xlab("Log-fold Change")+
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text.x = element_text(angle = 45, vjust = 0.5,size = 20),
+        #t, r, b, l.
+        plot.margin = unit(c(1,1,1,1),"cm"),
+        axis.title.y = element_text(vjust=4,hjust = 0.64,size = 27),
+        axis.title.x = element_text(vjust=-2, size = 29))
+
+dev.off()
+```
+
+
+# cluster between
+
+```{r}
+rm(list =ls())
+
+load("../../results/simulation/boxplot/cluster_b_dist.Rda")
+
+plot_df = do.call(cbind, clus_list)
+long = melt(plot_df)
+long$Setting = unlist(lapply(str_split(long$Var2, "_"), function(x) x[1]))
+long$Setting = str_replace(long$Setting, "s", "S")
+long$compare = unlist(lapply(str_split(long$Var2, "_"), function(x) x[2]))
+long$type = unlist(lapply(str_split(long$Var2, "_"), function(x) x[3]))
+long$dens = ifelse(str_detect(long$type, "gmm"), "GMM", "KNN")
+long$dim = ifelse(str_detect(long$type, "scvi"), "ScVI", "PCA")
+long$cluster = ifelse(long$compare == "25vs100", "0.61 vs 0.28",
+                      ifelse(long$compare =="25vs50", "0.43 vs 0.28",
+                             ifelse(long$compare == "20vs40", "0.05 vs 0.03",
+                                    ifelse(long$compare == "20vs60", "0.08 vs 0.03", 
+                                           ifelse(long$compare == "20vs80", "0.1 vs 0.03", 
+                                                  ifelse(long$compare == "25vs35", "0.35 vs 0.28",
+                                                         "0.53 vs 0.28"))))))
+
+#long$dim = ifelse(long$dim == "pca", "PCA", "ScVI")
+long$Setting = ifelse(str_detect(long$Setting, "1"), "Largest Cluster", "Smallest Cluster")
+```
+
+```{r}
+
+
+
+pdf("../../results/supplement/boxplot_cluster_knnscvi.pdf", width = 8, height = 6)
+
+ggplot(long[long$dim == "ScVI" & long$dens == "KNN",], aes(x = cluster, y = value, group = cluster)) +
+  geom_boxplot(aes(col = Setting))+
+  ylab("Average Between Group Difference") +
+  xlab(TeX("$p_{A,1}\\ vs\\ p_{B,1}$"))+  
+  theme_bw()+
+  theme(text = element_text(size = 25),
+        axis.text.x = element_text(angle = 45, vjust = 0.5,size = 20),
+        #t, r, b, l.
+        plot.margin = unit(c(1,1,1,1),"cm"),
+        legend.position = "top",
+        axis.title.y = element_text(vjust=4,hjust = 0.67,size = 27),
+        axis.title.x = element_text(vjust=-2, size = 29))+
+  scale_color_manual(values=popPackage:::bigPalette)
+dev.off()
+
+pdf("../../results/supplement/boxplot_cluster_gmmscvi.pdf", width = 8, height = 6)
+
+ggplot(long[long$dim == "ScVI" & long$dens == "GMM",], aes(x = cluster, y = value, group = cluster)) +
+  geom_boxplot(aes(col = Setting))+
+  ylab("Average Between Group Difference") +
+  xlab(TeX("$p_{A,1}\\ vs\\ p_{B,1}$"))+  
+  theme_bw()+
+  theme(text = element_text(size = 25),
+        axis.text.x = element_text(angle = 45, vjust = 0.5,size = 20),
+        #t, r, b, l.
+        plot.margin = unit(c(1,1,1,1),"cm"),
+        legend.position = "top",
+        axis.title.y = element_text(vjust=4,hjust = 0.67,size = 27),
+        axis.title.x = element_text(vjust=-2, size = 29))+
+  scale_color_manual(values=popPackage:::bigPalette)
+dev.off()
+
+
+pdf("../../results/supplement/boxplot_cluster_knnpca.pdf", width = 8, height = 6)
+
+ggplot(long[long$dim == "PCA"& long$dens == "KNN",], aes(x = cluster, y = value, group = cluster)) +
+  geom_boxplot(aes(col = Setting))+
+  ylab("Average Between Group Difference") +
+  xlab(TeX("$p_{A,1}\\ vs\\ p_{B,1}$"))+  
+  theme_bw()+
+  theme(text = element_text(size = 25),
+        axis.text.x = element_text(angle = 45, vjust = 0.5,size = 20),
+        #t, r, b, l.
+        plot.margin = unit(c(1,1,1,1),"cm"),
+        legend.position = "top",
+        axis.title.y = element_text(vjust=4,hjust = 0.67,size = 27),
+        axis.title.x = element_text(vjust=-2, size = 29))+
+  scale_color_manual(values=popPackage:::bigPalette)
+dev.off()
+
+pdf("../../results/supplement/boxplot_cluster_gmmpca.pdf", width = 8, height = 6)
+
+ggplot(long[long$dim == "PCA"& long$dens == "GMM",], aes(x = cluster, y = value, group = cluster)) +
+  geom_boxplot(aes(col = Setting))+
+  ylab("Average Between Group Difference") +
+  xlab(TeX("$p_{A,1}\\ vs\\ p_{B,1}$"))+  
+  theme_bw()+
+  theme(text = element_text(size = 25),
+        axis.text.x = element_text(angle = 45, vjust = 0.5,size = 20),
+        #t, r, b, l.
+        plot.margin = unit(c(1,1,1,1),"cm"),
+        legend.position = "top",
+        axis.title.y = element_text(vjust=4,hjust = 0.67,size = 27),
+        axis.title.x = element_text(vjust=-2, size = 29))+
+  scale_color_manual(values=popPackage:::bigPalette)
+dev.off()
+```
+# cluster within
+
+```{r}
+rm(list =ls())
+
+load("../../results/simulation/boxplot/alpha_w_cluster.Rda")
+
+
+plot_df = do.call(cbind, alpha_list)
+long = melt(plot_df)
+long$Setting = paste0("1/",str_replace(unlist(lapply(str_split(long$Var2, "_"), function(x) x[1])), "alpha", ""))
+long$Setting[long$Setting == "1/0"] = 0
+long$compare = unlist(lapply(str_split(long$Var2, "_"), function(x) x[2]))
+long$dens = ifelse(str_detect(long$compare, "gmm"), "GMM", "KNN")
+long$dim = ifelse(str_detect(long$compare, "scvi"), "ScVI", "PCA")
+
+```
+
+```{r}
+
+
+pdf("../../results/supplement/boxplot_alpha_w_knnscvi.pdf", width = 8, height = 6)
+
+ggplot(long[long$dim == "ScVI" & long$dens == "KNN",], aes(x = factor(Setting, levels = c("0", "1/100","1/10", "1/2","1/1")), y = value)) +
+  geom_boxplot()+
+  ylab("Average Within Group Difference") +
+  xlab(TeX("$1/alpha$"))+  
+  theme_bw()+
+ theme(text = element_text(size = 27),
+        axis.text.x = element_text(angle = 45, vjust = 0.5,size = 23),
+        #t, r, b, l.
+        plot.margin = unit(c(2,1,0.5,1),"cm"),
+         axis.title.y = element_text(vjust=4,hjust = 0.65),
+        axis.title.x = element_text(vjust=-2,size = 30))
+dev.off()
+
+pdf("../../results/supplement/boxplot_alpha_w_gmmscvi.pdf", width = 8, height = 6)
+
+ggplot(long[long$dim == "ScVI" & long$dens == "GMM",], aes(x = factor(Setting, levels = c("0", "1/100","1/10","1/2", "1/1")), y = value)) +
+  geom_boxplot()+
+  ylab("Average Within Group Difference") +
+  xlab(TeX("$1/alpha$"))+  
+  theme_bw()+
+ theme(text = element_text(size = 27),
+        axis.text.x = element_text(angle = 45, vjust = 0.5,size = 23),
+        #t, r, b, l.
+        plot.margin = unit(c(2,1,0.5,1),"cm"),
+         axis.title.y = element_text(vjust=4,hjust = 0.65),
+        axis.title.x = element_text(vjust=-2,size = 30))
+dev.off()
+
+
+pdf("../../results/supplement/boxplot_alpha_w_knnpca.pdf", width = 8, height = 6)
+
+ggplot(long[long$dim == "PCA"& long$dens == "KNN",], aes(x = factor(Setting, levels = c("0", "1/100", "1/10","1/2","1/1")), y = value)) +
+  geom_boxplot()+
+  ylab("Average Within Group Difference") +
+  xlab(TeX("$1/alpha$"))+  
+  theme_bw()+
+ theme(text = element_text(size = 27),
+        axis.text.x = element_text(angle = 45, vjust = 0.5,size = 23),
+        #t, r, b, l.
+        plot.margin = unit(c(2,1,0.5,1),"cm"),
+         axis.title.y = element_text(vjust=4,hjust = 0.65),
+        axis.title.x = element_text(vjust=-2,size = 30))
+dev.off()
+
+pdf("../../results/supplement/boxplot_alpha_w_gmmpca.pdf", width = 8, height = 6)
+
+ggplot(long[long$dim == "PCA"& long$dens == "GMM",], aes(x = factor(Setting, levels = c("0", "1/100","1/10","1/2", "1/1")), y = value)) +
+  geom_boxplot()+
+  ylab("Average Within Group Difference") +
+  xlab(TeX("$1/alpha$"))+  
+  theme_bw()+
+ theme(text = element_text(size = 27),
+        axis.text.x = element_text(angle = 45, vjust = 0.5,size = 23),
+        #t, r, b, l.
+        plot.margin = unit(c(2,1,0.5,1),"cm"),
+         axis.title.y = element_text(vjust=4,hjust = 0.65),
+        axis.title.x = element_text(vjust=-2,size = 30))
+dev.off()
+```
+
+# sd baseline
+
+```{r}
+rm(list =ls())
+
+load("../../results/simulation/boxplot/sigma_wA_dist.Rda")
+plot_df = do.call(cbind, sd_list)
+long = melt(plot_df)
+
+long$sd = as.numeric(str_replace(unlist(lapply(str_split(long$Var2, "_"), function(x) x[1])), "sd", ""))/100
+
+
+long$dens = ifelse(str_detect(long$Var2, "gmm"), "GMM", "KNN")
+long$type = ifelse(str_detect(long$Var2, "pca"), "PCA", "ScVI")
+
+```
+
+
+```{r}
+pdf("../../results/supplement/boxplot_sd_w_knnpca.pdf", width = 8, height = 6)
+
+ggplot(long[long$dens == "KNN" & long$type == "PCA",], aes(x = factor(sd), y = value))+
+  geom_boxplot() +
+  xlab(TeX("$sigma$"))+
+  ylab("Average Within Group Difference") +
+  theme_bw()+
+  theme(text = element_text(size = 27),
+        axis.text.x = element_text(angle = 45, vjust = 0.5,hjust = 0.7,size = 27),
+        #t, r, b, l.
+        plot.margin = unit(c(2,1,0.5,1),"cm"),
+         axis.title.y = element_text(vjust=4, hjust = 0.6),
+        axis.title.x = element_text(vjust=-2,size = 30))
+dev.off()
+
+pdf("../../results/supplement/boxplot_sd_w_gmmscvi.pdf", width = 8, height = 6)
+
+ggplot(long[long$dens == "GMM" & long$type == "ScVI",], aes(x = factor(sd), y = value))+
+  geom_boxplot() +
+  xlab(TeX("$sigma$"))+
+  ylab("Average Within Group Difference") +
+  theme_bw()+
+  theme(text = element_text(size = 27),
+        axis.text.x = element_text(angle = 45, vjust = 0.5,hjust = 0.7,size = 27),
+        #t, r, b, l.
+        plot.margin = unit(c(2,1,0.5,1),"cm"),
+         axis.title.y = element_text(vjust=4, hjust = 0.6),
+        axis.title.x = element_text(vjust=-2,size = 30))
+dev.off()
+
+pdf("../../results/supplement/boxplot_sd_w_gmmpca.pdf", width = 8, height = 6)
+
+ggplot(long[long$dens == "GMM" & long$type == "PCA",], aes(x = factor(sd), y = value))+
+  geom_boxplot() +
+  xlab(TeX("$sigma$"))+
+  ylab("Average Within Group Difference") +
+  theme_bw()+
+  theme(text = element_text(size = 27),
+        axis.text.x = element_text(angle = 45, vjust = 0.5,hjust = 0.7,size = 27),
+        #t, r, b, l.
+        plot.margin = unit(c(2,1,0.5,1),"cm"),
+         axis.title.y = element_text(vjust=4, hjust = 0.6),
+        axis.title.x = element_text(vjust=-2,size = 30))
+dev.off()
+
+pdf("../../results/supplement/boxplot_sd_w_knnscvi.pdf", width = 8, height = 6)
+
+ggplot(long[long$dens == "KNN" & long$type == "ScVI",], aes(x = factor(sd), y = value))+
+  geom_boxplot() +
+  xlab(TeX("$sigma$"))+
+  ylab("Average Within Group Difference") +
+  theme_bw()+
+  theme(text = element_text(size = 27),
+        axis.text.x = element_text(angle = 45, vjust = 0.5,hjust = 0.7,size = 27),
+        #t, r, b, l.
+        plot.margin = unit(c(2,1,0.5,1),"cm"),
+         axis.title.y = element_text(vjust=4, hjust = 0.6),
+        axis.title.x = element_text(vjust=-2,size = 30))
+dev.off()
+
+
+```
+
+

@@ -1,0 +1,274 @@
+---
+title: "comparison"
+author: "Hao Wang"
+date: "5/29/2022"
+output: 
+    html_document:
+        toc: true
+        toc_float: true
+        toc_collapsed: true
+        toc_depth: 3
+        number_sections: true
+        theme: cerulean
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(
+  echo = FALSE, message = FALSE, warning = FALSE
+)
+library(ggplot2)
+library(tidyr)
+library(vegan)
+library(reshape2)
+library(stringr)
+library(ggpubr)
+#library(popPackage)
+```
+
+
+
+# Moderate patient variation, group-specific cluster proportion different
+
+```{r}
+load("../../results/simulation/vstrue/trueKL_Step1/sd013_lfc005/1.Rda")
+load("../../results/simulation/vstrue/sd013_lfc005/1.Rda")
+```
+
+```{r eval = F}
+dist_est_GMM = c(as.dist(dist_mat_GMM_pca[rownames(dist_mat), colnames(dist_mat)]))
+dist_est_KNN = c(as.dist(dist_mat_KNN_pca[rownames(dist_mat), colnames(dist_mat)]))
+
+dist_est_GMM_scvi = c(as.dist(dist_mat_GMM_scvi[rownames(dist_mat), colnames(dist_mat)]))
+dist_est_KNN_scvi = c(as.dist(dist_mat_KNN_scvi[rownames(dist_mat), colnames(dist_mat)]))
+dist_true_mat = as.dist(dist_mat)
+
+dist_true = c(dist_true_mat)
+mycompare = c()
+for(i in 1:length(attr(dist_true_mat, "Labels"))){
+  mycompare = c(mycompare, paste0(attr(dist_true_mat, "Labels")[i], "-", attr(dist_true_mat, "Labels")[-(1:i)]))
+}
+mycompare = mycompare[-length(mycompare)]
+compare_group = str_replace_all(mycompare, paste0("sample", "[0-9]+", "[.](?!\\d+$)"), "")
+compare_group = gsub("[.](?!\\d+$)", "", compare_group, perl=TRUE)
+group = ifelse(substr(compare_group, 1,1) == substr(compare_group, 3,3), "same: A vs A or B vs B", "diff: A vs B")
+
+dist_df = data.frame(trueKL = dist_true,
+                     estGMM = dist_est_GMM,
+                     estKNN = dist_est_KNN,
+                     estGMMscvi = dist_est_GMM_scvi,
+                     estKNNscvi = dist_est_KNN_scvi,
+#                     diff = dist_true - dist_est,
+                     group = group)
+GMM= ggplot(dist_df, aes(x = dist_true, y = estGMM, col = group)) +
+  geom_point() +
+  theme_classic() +
+  xlab("True distance") +
+  ylab("GMM, PCA") +
+  theme(legend.position="top")
+
+ GMMscvi= ggplot(dist_df, aes(x = dist_true, y = estGMMscvi, col = group)) +
+  geom_point() +
+  theme_classic() +
+  xlab("True distance") +
+  ylab("GMM, scvi") +
+  theme(legend.position="top")
+  
+
+KNNscvi = ggplot(dist_df, aes(x = dist_true, y = estKNNscvi, col = group)) +
+  geom_point() +
+  theme_classic() +
+  xlab("True distance")+
+  ylab("KNN, scvi") +
+  theme(legend.position="top") 
+
+KNN = ggplot(dist_df, aes(x = dist_true, y = estKNN, col = group)) +
+  geom_point() +
+  theme_classic() +
+  xlab("True distance")+
+  ylab("KNN, PCA") +
+  theme(legend.position="top")
+
+ggarrange(GMM + theme(axis.title.x=element_blank()), KNN + theme(axis.title.x=element_blank()), GMMscvi +theme(legend.position="none"),KNNscvi + theme(legend.position="none"), 
+          labels = c("A", "B", "C", "d"),
+          ncol = 2, nrow = 2,
+          heights = c(2, 1.7),
+          widths = c(1.8,2))
+
+#ggarrange(test1, test2, labels = c("A", "B"),
+#          ncol = 1, nrow = 2)
+KNN
+```
+
+```{r eval = F}
+pdf("../../results/supplement/KNN_scvi_vstrue.pdf",         # File name
+    width = 6, height = 6)          # Paper size
+
+# Creating a plot
+KNNscvi+
+   theme(text = element_text(size = 20))      
+# Closing the graphical device
+dev.off() 
+
+pdf("../../results/supplement/KNN_pca_vstrue.pdf",         # File name
+    width = 6, height = 6)          # Paper size
+
+# Creating a plot
+KNN+
+   theme(text = element_text(size = 20))
+# Closing the graphical device
+dev.off() 
+
+pdf("../../results/supplement/GMM_scvi_vstrue.pdf",         # File name
+    width = 6, height = 6)          # Paper size
+
+# Creating a plot
+GMMscvi+
+   theme(text = element_text(size = 20))
+# Closing the graphical device
+dev.off() 
+
+pdf("../../results/supplement/GMM_pca_vstrue.pdf",         # File name
+    width = 6, height = 6)          # Paper size
+
+# Creating a plot
+GMM+
+   theme(text = element_text(size = 20))
+# Closing the graphical device
+dev.off() 
+```
+
+
+
+
+
+```{r }
+dist_list_GMM = list()
+dist_list_KNN = list()
+dist_list_GMMscvi = list()
+dist_list_KNNscvi = list()
+for(i in list.files("../../results/simulation/vstrue/sd013_lfc005/")){
+  load(paste0("../../results/simulation/vstrue/sd013_lfc005/",i))
+  dist_list_GMM[[i]] = dist_mat_GMM_pca
+  dist_list_KNN[[i]] = dist_mat_KNN_pca
+
+  dist_list_GMMscvi[[i]] = dist_mat_GMM_scvi
+  dist_list_KNNscvi[[i]] = dist_mat_KNN_scvi
+}
+
+gmm2 <- knn2 <- GMMscvi2 <- KNNscvi2 <- list()
+
+for(i in list.files("../../results/simulation/vstrue/sd01_lfc02_n4")){
+  load(paste0("../../results/simulation/vstrue/sd01_lfc02_n4/",i))
+  gmm2[[i]] = dist_mat_GMM_pca[4,3]
+  knn2[[i]] = dist_mat_KNN_pca[4,3]
+  GMMscvi2[[i]] = dist_mat_GMM_scvi[4,3]
+  KNNscvi2[[i]] = dist_mat_KNN_scvi[4,3]
+}
+
+gmm2 = do.call(rbind, gmm2)
+knn2 = do.call(rbind, knn2)
+GMMscvi2 = do.call(rbind, GMMscvi2)
+KNNscvi2 = do.call(rbind, KNNscvi2)
+
+gmm <- knn <- GMMscvi <- KNNscvi <- list()
+for(i in list.files("../../results/simulation/vstrue/sd013_lfc02_n2/")){
+  load(paste0("../../results/simulation/vstrue/sd013_lfc02_n2/",i))
+  gmm[[i]] = dist_mat_GMM_pca[1,2]
+  knn[[i]] = dist_mat_KNN_pca[1,2]
+  GMMscvi[[i]] = dist_mat_GMM_scvi[1,2]
+  KNNscvi[[i]] = dist_mat_KNN_scvi[1,2]
+}
+
+gmm = do.call(rbind, gmm)
+knn = do.call(rbind, knn)
+GMMscvi = do.call(rbind, GMMscvi)
+KNNscvi = do.call(rbind, KNNscvi)
+
+```
+
+
+```{r, fig.width=8}
+ref = colnames(dist_mat)[1]
+refsample = colnames(dist_mat)[c(17,19,20,2)]
+dist_mat_ori = dist_mat
+new_num  = c()
+load("../../results/simulation/vstrue/trueKL_Step1/sd01_lfc02/1.Rda")
+new_num = c(new_num, dist_mat[1,3])
+
+load("../../results/simulation/vstrue/trueKL_Step1/sd013_lfc02/1.Rda")
+new_num = c(new_num, dist_mat[1,2])
+
+dist_df_GMM = lapply(dist_list_GMM, function(x) x[ref, refsample])
+dist_df_GMM = do.call(rbind, dist_df_GMM)
+dist_df_GMM = cbind(gmm2,dist_df_GMM, gmm)
+colnames(dist_df_GMM)[1] = "sample1.A"
+dist_df_diff_GMM = t(apply(dist_df_GMM, 1, function(x) c(new_num[1],dist_mat_ori[ref, refsample],new_num[2]) - x))
+dist_df_ratio_GMM <- t(apply(dist_df_diff_GMM, 1, function(x) x/c(new_num[1],dist_mat_ori[ref, refsample], new_num[2])))
+colnames(dist_df_diff_GMM)[1] = colnames(dist_df_ratio_GMM)[1] = "sample1.A"
+
+#boxplot(dist_df_diff_GMM, main = " vs sample1.A, GMM")
+
+
+dist_df_KNN = lapply(dist_list_KNN, function(x) x[ref, refsample])
+dist_df_KNN = do.call(rbind, dist_df_KNN)
+dist_df_KNN = cbind(knn2, dist_df_KNN, knn)
+dist_df_diff_KNN = t(apply(dist_df_KNN, 1, function(x) c(new_num[1], dist_mat_ori[ref, refsample], new_num[2]) - x))
+dist_df_ratio_KNN <- t(apply(dist_df_diff_KNN, 1, function(x) x/c(new_num[1],dist_mat_ori[ref, refsample], new_num[2])))
+#boxplot(dist_df_diff_KNN, main = " vs sample1.A, KNN")
+colnames(dist_df_diff_KNN)[1] = colnames(dist_df_ratio_KNN)[1] = "sample1.A"
+
+dist_df_GMM_scvi = lapply(dist_list_GMMscvi, function(x) x[ref, refsample])
+dist_df_GMM_scvi = do.call(rbind, dist_df_GMM_scvi)
+dist_df_GMM_scvi = cbind(GMMscvi2,dist_df_GMM_scvi, GMMscvi)
+dist_df_diff_GMM_scvi = t(apply(dist_df_GMM_scvi, 1, function(x) c(new_num[1], dist_mat_ori[ref, refsample],new_num[2]) - x))
+dist_df_ratio_GMM_scvi <- t(apply(dist_df_diff_GMM_scvi, 1, function(x) x/c(new_num[1], dist_mat_ori[ref, refsample],new_num[2])))
+colnames(dist_df_diff_GMM_scvi)[1] = colnames(dist_df_ratio_GMM_scvi)[1] = "sample1.A"
+
+dist_df_KNN_scvi = lapply(dist_list_KNNscvi, function(x) x[ref, refsample])
+dist_df_KNN_scvi = do.call(rbind, dist_df_KNN_scvi)
+dist_df_KNN_scvi = cbind(KNNscvi2, dist_df_KNN_scvi, KNNscvi)
+colnames(dist_df_KNN_scvi)[1] = "sample1.A"
+dist_df_diff_KNN_scvi = t(apply(dist_df_KNN_scvi, 1, function(x) c(new_num[1], dist_mat_ori[ref, refsample], new_num[2]) - x))
+dist_df_ratio_KNN_scvi <- t(apply(dist_df_diff_KNN_scvi, 1, function(x) x/c(new_num[1], dist_mat_ori[ref, refsample], new_num[2])))
+#boxplot(dist_df_diff_KNN, main = " vs sample1.A, KNN")
+colnames(dist_df_diff_KNN_scvi)[1] = colnames(dist_df_ratio_KNN_scvi)[1] = "sample1.A"
+
+dist_all_df <- cbind(dist_df_diff_GMM, dist_df_diff_KNN, dist_df_diff_GMM_scvi,dist_df_diff_KNN_scvi)
+#dist_all_org<- cbind(dist_df_GMM, dist_df_KNN,dist_df_GMM_scvi, dist_df_KNN_scvi)
+dist_all_ratio <- cbind(dist_df_ratio_GMM, dist_df_ratio_KNN,dist_df_ratio_GMM_scvi, dist_df_ratio_KNN_scvi)
+colnames(dist_all_df) <-  colnames(dist_all_ratio)<- paste0(colnames(dist_all_df), c(rep("_GMM_pca", 6), rep("_KNN_pca",6),rep("_GMM_scvi", 6), rep("_KNN_scvi",6)))
+#compare <- rep(rep(c("within", "between"), each = 2),4)
+compare <- rep(c(rep("within",3), rep("between",3)),4)
+colnames(dist_all_ratio) = gsub("sample", "", colnames(dist_all_ratio))
+long <- melt(dist_all_ratio, id.vars = 1:24)
+long$comparison = ifelse(str_detect(long$Var2, "A"), "Within Group", "Between Group")
+long$`Dimension Reduction` = ifelse(str_detect(long$Var2, "pca"), "PCA", "scVI")
+long$density = ifelse(str_detect(long$Var2, "GMM"), "GMM", "KNN")
+long$type = paste0(long$density , ", ",long$`Dimension Reduction` )
+long$new = paste0(long$density , ", ",long$`Dimension Reduction` )
+long$ori =rep( c(new_num[1], dist_mat_ori[ref, refsample], new_num[2]), each = 400)
+
+```
+
+
+```{r}
+pdf("../../results/supplement/boxplot_diff_ggplot_extra.pdf",         # File name
+    width = 12, height = 6)          # Paper size
+
+# Creating a plot
+ggplot(long, aes(x = Var2, y = value)) +
+  geom_boxplot(aes(fill = comparison)) +
+  theme_bw() +
+  scale_x_discrete(labels=rep(as.character(round(c(new_num[1],dist_mat_ori[ref, refsample], new_num[2]),2)),5))+
+   theme(text = element_text(size = 20),
+         axis.text.x = element_text(angle=45, vjust = 0.5)) +
+  facet_grid(~type, scale = "free") +
+  xlab("True Distance")+
+  ylab("(True - Estimated)/True")+
+  scale_fill_manual(values=popPackage:::bigPalette)
+dev.off()
+
+```
+
+
