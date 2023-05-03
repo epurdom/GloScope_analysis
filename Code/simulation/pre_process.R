@@ -4,7 +4,7 @@ min_genes = 100
 min_size = 50
 group_keep = NULL
 
-myseurat = readRDS("../../data/Processed_Datasets/covid143/covid143_default/covid143_default.Rds")
+myseurat = readRDS("../../data/Processed_Datasets/stephensonCOVIDPBMC/stephensonCOVIDPBMC_default/stephensonCOVIDPBMC_default.Rds")
 
 sce <- as.SingleCellExperiment(myseurat, assay = "raw")
 sce <- sce[,sce$group == "Covid"]
@@ -20,7 +20,7 @@ library(SingleCellExperiment)
 #pat = unique(sce$patient_id)
 #sub_pat =  sample(pat,5)
 #print(sub_pat)
-# to ensure being able to replciate code, here are the 
+# to ensure being able to replicate code, here are the 
 # 5 random samples we picked:
 
 sub_pat = c("MH8919327", "MH9143277", "MH9179824", "MH9143326", "MH9143271

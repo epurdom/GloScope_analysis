@@ -6,7 +6,6 @@ date: "2022-09-12"
 ```{r}
 library(ggplot2)
 library(popPackage)
-load("plot_df_UMAP.Rda")
 safe_colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77",
                              "#117733", "#332288", "#AA4499", 
                              "#44AA99", "#999933", "#882255",
@@ -16,6 +15,10 @@ colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73",
 ```
 
 ```{r}
+myseurat = readRDS("../../data/Processed_Datasets/pelkaCRC/pelkaCRC_default/pelkaCRC_default.Rds")
+
+plot_df = cbind(myseurat@meta.data, myseurat@reductions$umap@cell.embeddings)
+
 set.seed(1)
 pdf("../../results/supplement/umap_pelka.pdf",width = 10, height = 6)
 ggplot(plot_df[sample(seq_len(nrow(plot_df)),50000),], aes(x = UMAP_1, y = UMAP_2))+
@@ -30,6 +33,15 @@ ggplot(plot_df[sample(seq_len(nrow(plot_df)),50000),], aes(x = UMAP_1, y = UMAP_
   xlab("UMAP1") +
   ylab("UMAP2")
 dev.off() 
+
+```
+
+
+
+```{r}
+myseurat = readRDS("../../data/Processed_Datasets/stephensonCOVIDPBMC/stephensonCOVIDPBMC_default/stephensonCOVIDPBMC_default.Rds")
+
+plot_df = cbind(myseurat@meta.data, myseurat@reductions$umap@cell.embeddings)
 
 ```
 

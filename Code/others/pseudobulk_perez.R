@@ -3,7 +3,7 @@ library(Seurat)
 library(SingleCellExperiment)
 library(muscat)
 
-sce = readRDS("../../data/Processed_Datasets/perez/perez_default/perez_default.Rds")
+sce = readRDS("../../data/Processed_Datasets/perezLupus/perezLupus_default/perezLupus_default.Rds")
 sce$sample_id = paste0(sce$sample_uuid,"_", sce$Processing_Cohort)
 
 

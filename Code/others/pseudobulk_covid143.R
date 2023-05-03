@@ -2,7 +2,7 @@ library(stringr)
 library(muscat)
 library(Seurat)
 
-myseurat = readRDS("../../data/Processed_Datasets/covid143/covid143_default/covid143_default.Rds")
+myseurat = readRDS("../../data/Processed_Datasets/stephensonCOVIDPBMC/stephensonCOVIDPBMC_default/stephensonCOVIDPBMC_default.Rds")
 
 sce <- as.SingleCellExperiment(myseurat, assay = "raw")
 rm(myseurat)

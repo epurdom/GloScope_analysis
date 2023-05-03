@@ -52,9 +52,9 @@ safe_colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77",
 # Allenmouse
 
 ```{r}
-meta = readRDS("../../data/Processed_Datasets/allenMouse/metadata/allenMouse_default_metadata.Rds")
+meta = readRDS("../../data/Processed_Datasets/yaoMouseBrain/metadata/yaoMouseBrain_default_metadata.Rds")
 meta <- unique(meta[,c("patient", "sample", "group","joint_region_label")])
-dist_mat <- readRDS("../../results/Processed_Datasets/allenMouse/allenMouse_default/allenMouse_default_dist_mat.Rds")
+dist_mat <- readRDS("../../results/Processed_Datasets/yaoMouseBrain/yaoMouseBrain_default/yaoMouseBrain_default_dist_mat.Rds")
 meta$joint_region_label[which(meta$joint_region_label == "RHP")] = "PPP-SP"
 
 meta$`brain region` <- ifelse(meta$joint_region_label %in% c("HIP","ENT", "PPP-SP"), "HFP", "CTX")
@@ -172,9 +172,9 @@ dev.off()
 # COVID_143
 
 ```{r}
-meta = readRDS("../../data/Processed_Datasets/covid143/metadata/covid143_default_metadata.Rds")
+meta = readRDS("../../data/Processed_Datasets/stephensonCOVIDPBMC/metadata/stephensonCOVIDPBMC_default_metadata.Rds")
 meta <- unique(meta[, c("patient", "group", "sample", "Site")])
-dist_mat <- readRDS("../../results/Processed_Datasets/covid143/covid143_default/covid143_default_dist_mat.Rds")
+dist_mat_GMM_PCA <- readRDS("../../results/Processed_Datasets/stephensonCOVIDPBMC/stephensonCOVIDPBMC_default/stephensonCOVIDPBMC_default_GMM_PCA_matrix.Rds")
 
 levels(meta$Site)[1] = "Cambridge "
 ```
@@ -317,12 +317,12 @@ dev.off()
 
 
 ```{r}
-meta = readRDS("../../data/Processed_Datasets/pelka/metadata/pelka_default_metadata.Rds")
+meta = readRDS("../../data/Processed_Datasets/pelkaCRC/metadata/pelkaCRC_default_metadata.Rds")
 meta <- unique(meta[, c("patient", "group", "sample")])
-dist_mat <- readRDS("../../results/Processed_Datasets/pelka/pelka_default/pelka_default_dist_mat.Rds")
+dist_mat_GMM_PCA <- readRDS("../../results/Processed_Datasets/pelkaCRC/pelkaCRC_default/pelkaCRC_default_PCA_GMM_matrix.Rds")
 
 meta <- unique(plot_df[, c("PatientTypeID", "MMRStatusTumor")])
-meta = meta[meta$PatientTypeID %in% rownames(dist_mat_GMM_PCA_pat),]
+meta = meta[meta$PatientTypeID %in% rownames(dist_mat_GMM_PCA),]
 ```
 
 
@@ -338,22 +338,6 @@ ggplot(df, aes(x = Coordinate1, y = Coordinate2))+
     theme_bw()+
   theme(text = element_text(size = 30),
         axis.title.x = element_text(vjust = -0.6))+
-    scale_color_manual(values=colorBlindBlack8)
-    
-
-dev.off()
-```
-```{r eval = F}
-meta_sub = meta[meta$MMRStatusTumor != "Normal",]
-dist_mat_sub = dist_mat_GMM_PCA_pat[meta_sub$PatientTypeID, meta_sub$PatientTypeID]
-
-df = plotMDS(sqrt(dist_mat_sub),n = 2, x = meta_sub, sample_id = "PatientTypeID", group_id = "MMRStatusTumor")$mds
-pdf("../../results/fig/pelka_GMM_mds_sqrt_sub.pdf", width = 8, height = 6)
-ggplot(df, aes(x = Coordinate1, y = Coordinate2))+
-  geom_point(aes(col = MMRStatusTumor), size = 5)+
-  labs(color = "Types")+
-    theme_bw()+
-  theme(text = element_text(size = 30))+
     scale_color_manual(values=colorBlindBlack8)
     
 
@@ -394,11 +378,13 @@ dev.off()
 
 ```{r}
 
-meta = readRDS("../../data/Processed_Datasets/pelka/metadata/pelka_default_metadata.Rds")
+meta = readRDS("../../data/Processed_Datasets/pelkaLupus/metadata/pelkaLupus_default_metadata.Rds")
 meta <- unique(meta[, c("patient", "group", "sample")])
 levels(meta$group)[which(levels(meta$group) == "na")] = "normal"
 meta$batch_id = 
-dist_mat <- readRDS("../../results/Processed_Datasets/pelka/pelka_default/pelka_default_dist_mat.Rds")
+dist_mat_GMM_PCA <- readRDS("../../results/Processed_Datasets/pelkaLupus/pelka_default/pelkaLupus_default_PCA_GMM_matrix.Rds")
+
+dist_mat_GMM_har <- readRDS("../../results/Processed_Datasets/pelkaLupus/pelka_default/pelkaLupus_default_HarmonyBatch_GMM_matrix.Rds")
 meta$disease_state = str_to_title(meta$disease_state)
 
 #meta$batch_id = paste0(meta$donor_uuid, "_", meta$Processing_Cohort)
@@ -411,7 +397,7 @@ meta$disease_state = str_to_title(meta$disease_state)
 
 ```{r }
 
-data = plotMDS(sqrt(dist_mat_GMM),n = 2, x = meta, sample_id = "batch_id", group_id = "disease_status")$mds
+data = plotMDS(sqrt(dist_mat_GMM_PCA),n = 2, x = meta, sample_id = "batch_id", group_id = "disease_status")$mds
 perez_legend = ggplot(data, aes(x = Coordinate1, y = Coordinate2)) +
   geom_point(aes(col = disease_state, shape = Processing_Cohort),
              size = 4)+
