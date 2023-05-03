@@ -119,10 +119,12 @@ dev.off()
 
 
 ```{r }
-meta = readRDS("../../data/Processed_Datasets/rash12/metadata/rash12_default_metadata.Rds")
-meta <- unique(meta[, c("patient", "group", "sample")])
-dist_mat <- readRDS("../../results/Processed_Datasets/rash12/rash12_default/rash12_default_dist_mat.Rds")
+meta = readRDS("../../data/Processed_Datasets/chengRash12/metadata/chengRash12_default_metadata.Rds")
+meta <- unique(meta[, c("group", "sample")])
+dist_mat_GMM_PCA <- readRDS("../../results/Processed_Datasets/chengRash12/chengRash12_default/chengRash12_default_PCA_GMM_matrix.Rds")
 #meta$group = meta$tissue
+meta$group = as.character(meta$group)
+meta$sample = as.character(meta$sample)
 meta$group[which(meta$group == "psoriasis")] = "trunk (psoriasis) "
 meta$group[which(meta$group == "trunk")] = "trunk (normal)"
 meta$group = str_to_title(meta$group)
@@ -279,14 +281,14 @@ dev.off()
 
 
 ```{r}
-meta = readRDS("../../data/Processed_Datasets/covidLung/metadata/covidLung_default_metadata.Rds")
-meta <- unique(meta[, c("patient", "group", "sample")])
-dist_mat <- readRDS("../../results/Processed_Datasets/covidLung/covidLung_default/covidLung_default_dist_mat.Rds")
+#meta = readRDS("../../data/Processed_Datasets/melmsCOVIDLung/metadata/melmsCOVIDLung_default_metadata.Rds")
+#meta <- unique(meta[, c("group", "sample")])
+dist_mat_GMM_PCA <- readRDS("../../results/Processed_Datasets/melmsCOVIDLung/melmsCOVIDLung_default/melmsCOVIDLung_default_PCA_GMM_matrix.Rds")
 #meta <- data.frame("sample" = colnames(dist_mat_GMM_PCA))
+meta <- data.frame("sample" = colnames(dist_mat_GMM_PCA))
 
 meta$condition <- ifelse(str_detect(meta$sample, "cov"), "COVID", "Normal")
 
-meta <- data.frame("sample" = colnames(dist_mat_GMM_PCA))
 ```
 
 ## mds
