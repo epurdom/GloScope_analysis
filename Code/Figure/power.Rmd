@@ -260,7 +260,7 @@ clus_prop = read.csv("../../results/simulation/power/cluster.csv", row.names = 1
 
 clus_set1 = clus_prop[str_detect(rownames(clus_prop), "Setting1"),]
 power_set1_prop = data.frame("pA_pB" =rep(paste0(clus_set1$Pi_A1, " vs ", clus_set1$Pi_B1),each = 8*2),
-                             "Group" = rep(rep(c("A", "B"),each= 8), nrow(clus_set1)),
+                             "Group" = rep(rep(c("1", "2"),each= 8), nrow(clus_set1)),
                              "cluster" = rep(paste0("cluster_",1:8),nrow(clus_set1)),
                              "Proportion" = c(eval(parse(text = paste0("c(", clus_set1$Pi_A[1],",",clus_set1$Pi_B[1], ")"))),
                                               eval(parse(text = paste0("c(", clus_set1$Pi_A[2],",",clus_set1$Pi_B[2], ")"))),
@@ -275,7 +275,9 @@ A = ggplot(power_set1_prop, aes(x = Group, y = Proportion, fill = cluster, group
   theme(legend.position = "none",
         text = element_text(size = 20),
         axis.title.x = element_text(size = 25),
-                axis.title.y = element_text(size = 25))
+                axis.title.y = element_text(size = 25),
+          strip.background = element_blank(),
+  strip.text.x = element_blank())
 
 
 clus_set1$pA_pB = paste0(clus_set1$Pi_A1, " vs ", clus_set1$Pi_B1)
@@ -293,7 +295,7 @@ B =ggplot(power_long[power_long$dim != "true",], aes(x =factor(pA_pB), y = value
    guides(col="none") +
   theme(legend.position = "top",
         text = element_text(size = 20),
-        axis.title.x = element_text(size = 25, vjust = 0.1),
+        axis.title.x = element_blank(),
         axis.title.y = element_text(size = 25),
         axis.text.x = element_blank())+
      scale_colour_manual(values = popPackage::bigPalette)
@@ -308,7 +310,7 @@ B_gmm =ggplot(power_long[power_long$dim =="PCA" & power_long$Density == "GMM",],
   theme(legend.position = "top",
         text = element_text(size = 20),
                 axis.text.x = element_blank(),
-        axis.title.x = element_text(size = 25,vjust = 0.1),
+        axis.title.x = element_blank(),
                 axis.title.y = element_text(size = 25))+
      scale_colour_manual(values = popPackage::bigPalette)
 
@@ -318,7 +320,7 @@ B_gmm =ggplot(power_long[power_long$dim =="PCA" & power_long$Density == "GMM",],
 #clus_prop = do.call(rbind, clus_list)
 clus_set3 = clus_prop[str_detect(rownames(clus_prop), "Setting3"),]
 power_set3_prop = data.frame("pA_pB" =rep(paste0(clus_set3$Pi_A1, " vs ", clus_set3$Pi_B1),each = 8*2),
-                             "Group" = rep(rep(c("A", "B"),each= 8), nrow(clus_set3)),
+                             "Group" = rep(rep(c("1", "2"),each= 8), nrow(clus_set3)),
                              "cluster" = rep(paste0("cluster_",1:8),nrow(clus_set3)),
                              "Proportion" = c(eval(parse(text = paste0("c(", clus_set3$Pi_A[1],",",clus_set3$Pi_B[1], ")"))),
                                               eval(parse(text = paste0("c(", clus_set3$Pi_A[2],",",clus_set3$Pi_B[2], ")"))),
@@ -332,7 +334,9 @@ C = ggplot(power_set3_prop, aes(x = Group, y = Proportion, fill = cluster, group
     scale_fill_manual(values = popPackage::bigPalette[2:30])+
   theme(legend.position = "none",
         text = element_text(size = 20),
-        axis.title.x = element_text(size = 25))
+        axis.title.x = element_text(size = 25),
+          strip.background = element_blank(),
+  strip.text.x = element_blank())
 
 
 clus_set3$pA_pB = paste0(clus_set3$Pi_A1, " vs ", clus_set3$Pi_B1)
@@ -352,7 +356,7 @@ D =ggplot(power_long_3[power_long_3$dim != "true",], aes(x =factor(pA_pB), y = v
           linetype = "none")+
   theme(legend.position = "top",
         text = element_text(size = 20),
-        axis.title.x = element_text(size = 25, vjust = 0.1),
+        axis.title.x = element_blank(),
         axis.text.x = element_blank())+
   ylab("")+
      scale_colour_manual(values = popPackage::bigPalette)
@@ -368,7 +372,7 @@ D_gmm =ggplot(power_long_3[power_long_3$dim =="PCA"& power_long_3$density == "GM
   theme(legend.position = "none",
         text = element_text(size = 20),
         axis.text.x = element_blank(),
-        axis.title.x = element_text(size = 25,vjust = 0.1))+
+        axis.title.x = element_blank())+
   ylab("")+
      scale_colour_manual(values = popPackage::bigPalette)
 
