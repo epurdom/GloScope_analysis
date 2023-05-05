@@ -209,7 +209,7 @@ covid_legend = ggplot(df, aes(x = Coordinate1, y = Coordinate2)) +
   geom_point(aes(col = Status,
                  shape = batch), size =4) +
       scale_shape_manual(values=c(16, 7,3))+
-  scale_color_manual(values=colorBlindBlack8) +
+  scale_color_manual(values=colorBlindBlack8[-4]) +
     theme_bw() +
   theme(text = element_text(size = 20))+
     guides(color = guide_legend(order=1),
@@ -227,7 +227,7 @@ pdf("../../results/fig/covid143allGMMPCA.pdf", width = 7, height = 6)
 ggplot(df, aes(x = Coordinate1, y = Coordinate2)) + 
   geom_point(aes(shape = batch,
                  col = Status), size =4) +
-  scale_color_manual(values=colorBlindBlack8) +
+  scale_color_manual(values=colorBlindBlack8[-4]) +
     theme_bw() +
     scale_shape_manual(values=c(16, 7,3))+
   theme(text = element_text(size = 25),
@@ -267,7 +267,7 @@ pdf("../../results/fig/covid143GMMpca.pdf", width = 7, height = 6)
 ggplot(df_sqrt, aes(x = Coordinate1, y = Coordinate2)) + 
   geom_point(aes(shape = batch,
                  col = Status), size =4) +
-  scale_color_manual(values=colorBlindBlack8) +
+  scale_color_manual(values=colorBlindBlack8[-4]) +
     theme_bw() +
     scale_shape_manual(values=c(16, 7,3))+
   theme(text = element_text(size = 25),
@@ -341,7 +341,7 @@ ggplot(df, aes(x = Coordinate1, y = Coordinate2))+
     theme_bw()+
   theme(text = element_text(size = 30),
         axis.title.x = element_text(vjust = -0.6))+
-    scale_color_manual(values=colorBlindBlack8)
+    scale_color_manual(values=colorBlindBlack8[-4])
     
 
 dev.off()
@@ -356,7 +356,7 @@ pdf("../../results/supplement/pelka_mds5.pdf",width = 8, height = 6)
 pairs(df[,paste0("Coordinate",1:5)],
       col =colorBlindBlack8[df$MMRStatusTumor],oma=c(4,4,6,15))
 par(xpd=TRUE)
-legend("bottomright", fill = colorBlindBlack8, legend =c("MMRd","MMRp","Normal"))
+legend("bottomright", fill = colorBlindBlack8[-4], legend =c("MMRd","MMRp","Normal"))
 
 dev.off()
 
@@ -384,8 +384,7 @@ dev.off()
 meta = readRDS("../../data/Processed_Datasets/perezLupus/metadata/perezLupus_default_metadata.Rds")
 meta <- unique(meta[, c("patient", "group", "sample", "batch")])
 levels(meta$group)[which(levels(meta$group) == "na")] = "normal"
-meta$batch_id = 
-dist_mat_GMM_PCA <- readRDS("../../results/Processed_Datasets/perezLupus/perez_default/perezLupus_default_PCA_GMM_matrix.Rds")
+dist_mat_GMM_PCA <- readRDS("../../results/Processed_Datasets/perezLupus/perezLupus_default/perezLupus_default_PCA_GMM_matrix.Rds")
 
 dist_mat_GMM_har <- readRDS("../../results/Processed_Datasets/perezLupus/perez_default/perezLupus_default_HarmonyBatch_GMM_matrix.Rds")
 meta$group = str_to_title(meta$group)
@@ -400,14 +399,14 @@ meta$group = str_to_title(meta$group)
 
 ```{r }
 
-data = plotMDS(sqrt(dist_mat_GMM_PCA),n = 2, x = meta, sample_id = "sample", group_id = "group")$mds
-perez_legend = ggplot(data, aes(x = Coordinate1, y = Coordinate2)) +
+df = plotMDS(sqrt(dist_mat_GMM_PCA),n = 2, x = meta, sample_id = "sample", group_id = "group")$mds
+perez_legend = ggplot(df, aes(x = Coordinate1, y = Coordinate2)) +
   geom_point(aes(col = group, shape = batch),
              size = 4)+
   theme_bw()+
   theme(text = element_text(size = 20))+
   labs(color = "Condition", shape = "Batch")+
-  scale_color_manual(values=colorBlindBlack8)+
+  scale_color_manual(values=colorBlindBlack8[-4])+
       guides(color = guide_legend(order=1),
          shape = guide_legend(order=2))
 legend <- cowplot::get_legend(perez_legend)
@@ -419,21 +418,24 @@ grid.draw(legend)
 dev.off()
 
 pdf("../../results/fig/perez_GMMpca_sqrt.pdf", width = 7, height = 6)
-ggplot(data, aes(x = Coordinate1, y = Coordinate2), size = 2) +
+ggplot(df, aes(x = Coordinate1, y = Coordinate2), size = 2) +
   geom_point(aes(col = group, shape = batch),
              size = 4)+
-  scale_color_manual(values=colorBlindBlack8) +
+  scale_color_manual(values=colorBlindBlack8[-4]) +
     theme_bw() +
   theme(text = element_text(size = 25),
         legend.position = "none",
         axis.title.x = element_text(vjust = -0.5))
 dev.off()
 
+
+
+df = plotMDS(sqrt(dist_mat_GMM_har),n = 2, x = meta, sample_id = "batch_id", group_id = "disease_state")$mds
+
 pdf("../../results/fig/perez_GMMhar_sqrt.pdf", width = 7, height = 6)
-data = plotMDS(sqrt(dist_mat_GMM_har),n = 2, x = meta, sample_id = "batch_id", group_id = "disease_state")$mds
-ggplot(data, aes(x = Coordinate1, y = Coordinate2)) +
+ggplot(df, aes(x = Coordinate1, y = Coordinate2)) +
   geom_point(aes(col = group, shape = batch), size = 4)+
-  scale_color_manual(values=colorBlindBlack8) +
+  scale_color_manual(values=colorBlindBlack8[-4]) +
     theme_bw() +
   theme(text = element_text(size = 25),
         legend.position = "none",
