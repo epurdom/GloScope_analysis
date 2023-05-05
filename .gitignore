@@ -1,0 +1,22 @@
+*.csv
+*.txt
+*.Rout
+data
+*/*_cache/*
+*/*_files/*
+.DS_Store
+*.html
+*.pdf
+*.RData
+*.out
+*.icloud
+*.Rhistory
+results
+*.sh
+*.png
+
+## Ignores All Files Without an Extension ##
+*
+!/**/
+!*.*
+#####
