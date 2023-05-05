@@ -3,18 +3,20 @@ min_cells = 10
 min_genes = 100
 min_size = 50
 group_keep = NULL
+library(edgeR)
+library(muscat)
+library(SingleCellExperiment)
+library(Seurat)
 
 myseurat = readRDS("../../data/Processed_Datasets/stephensonCOVIDPBMC/stephensonCOVIDPBMC_default/stephensonCOVIDPBMC_default.Rds")
 
 sce <- as.SingleCellExperiment(myseurat, assay = "raw")
-sce <- sce[,sce$group == "Covid"]
+sce <- sce[,sce$Status == "Covid"]
 sce <- sce[,sce$batch == "Ncl"]
 
 
 
-library(edgeR)
-library(muscat)
-library(SingleCellExperiment)
+
 
 
 #pat = unique(sce$patient_id)
@@ -25,12 +27,12 @@ library(SingleCellExperiment)
 
 sub_pat = c("MH8919327", "MH9143277", "MH9179824", "MH9143326", "MH9143271
 ")
-sce = sce[, sce$patient_id %in% sub_pat]
+sce = sce[, sce$sample %in% sub_pat]
 
 
-colnames(colData(sce))[10] = "cluster_id"
-#colnames(colData(sce))[25] = "sample_id"
-colnames(colData(sce))[16] = "group_id"
+colnames(colData(sce))[which(colnames(colData(sce)) == "cell_type")] = "cluster_id"
+colnames(colData(sce))[which(colnames(colData(sce)) == "sample")] = "sample_id"
+colnames(colData(sce))[which(colnames(colData(sce)) == "Status")] = "group_id"
 sce$group_id = droplevels(sce$group_id)
 sce$sample_id = droplevels(sce$sample_id)
 sce$cluster_id = droplevels(sce$cluster_id)

@@ -36,24 +36,26 @@ colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9", "#CC79A7",
 # Perez2022
 
 ```{r}
-load("../../results/Perez2022/batch_meta.Rda")
-levels(meta$disease_state)[which(levels(meta$disease_state) == "na")] = "normal"
+meta = readRDS("../../data/Processed_Datasets/perezLupus/metadata/perezLupus_default_metadata.Rds")
+meta <- unique(meta[, c("patient", "group", "sample", "batch")])
+levels(meta$group)[which(levels(meta$group) == "na")] = "normal"
 
 load("../../results/pseudobulk/pseudobulk_perez.Rda")
 
-meta$batch_id = paste0(meta$sample, "_", meta$Processing_Cohort)
-meta <- meta[match(rownames(plot_df), meta$batch_id),]
+#meta$batch_id = paste0(meta$sample, "_", meta$Processing_Cohort)
+rownames(plot_df) = str_replace(rownames(plot_df), "_", ".")
+meta <- meta[match(rownames(plot_df), meta$sample),]
 plot_df = cbind(plot_df, meta)
 plot_df$group = str_to_title(plot_df$group)
-plot_df$disease_state = str_to_title(plot_df$disease_state)
+#plot_df$disease_state = str_to_title(plot_df$disease_state)
 ```
 
 
 ```{r}
-pdf("../../results/supplement/perez_pseu.pdf", width = 8, height = 6)
+pdf("../../results/supplement/perez_pseudobulk.pdf", width = 8, height = 6)
 
 ggplot(plot_df, aes(x = PC_1, y = PC_2)) +
-  geom_point(aes(col = disease_state, shape = Processing_Cohort), size = 4)+
+  geom_point(aes(col = group, shape = batch), size = 4)+
   theme_bw()+
   theme(text = element_text(size = 25),
         axis.title.x = element_text(vjust = -1),
@@ -73,12 +75,12 @@ dev.off()
 # COVID_143 data
 
 ```{r}
-load("../../results/COVID_143/meta.Rda")
-meta = unique(plot_df[,c("sample_id", "Status", "Site")])
-load("../../results/pseudobulk/pseudobulk_update_sample.Rda")
+meta = readRDS("../../data/Processed_Datasets/stephensonCOVIDPBMC/metadata/stephensonCOVIDPBMC_default_metadata.Rds")
+meta <- unique(meta[, c("patient", "Status", "sample", "batch")])
+load("../../results/pseudobulk/pseudobulk_covid143.Rda")
 
-plot_df$Site <- meta$Site[match(rownames(plot_df), meta$sample_id,)]
-plot_df$group_id <- meta$Status[match(rownames(plot_df), meta$sample_id,)]
+plot_df$Site <- meta$batch[match(rownames(plot_df), meta$sample,)]
+plot_df$group_id <- meta$Status[match(rownames(plot_df), meta$sample,)]
 
 ```
 

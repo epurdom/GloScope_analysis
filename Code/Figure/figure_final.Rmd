@@ -32,18 +32,19 @@ library(gridExtra)
 # sbatch -p jsteinhardt --wrap="Rscript -e \"rmarkdown::render('paper_figures.Rmd')\""
 #library(ggplotify)
 #library(patchwork)
-darkcols <- bigPalette
+#darkcols <- bigPalette
 
 colfunc <- colorRampPalette(c("white", "blue1", "purple","red")) # 
     
-color2 <- bigPalette[17:20]
+#color2 <- bigPalette[17:20]
 
-colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9","#CC79A7", "#009E73", 
-                       "#F0E442", "#0072B2", "#D55E00")
+colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9",
+                                "lightpink1","#CC79A7", 
+                       "#009E73", "#F0E442", "#0072B2", "#D55E00")
 safe_colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77",
                              "#117733", "#332288", "#AA4499", 
                              "#44AA99", "#999933", "#882255",
-                             "#661100", "#6699CC", "#888888")                       
+                             "purple", "blue1", "#888888")                       
                        
 #https://stackoverflow.com/questions/57153428/r-plot-color-combinations-that-are-colorblind-accessible
 ```
@@ -53,13 +54,14 @@ safe_colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77",
 
 ```{r}
 meta = readRDS("../../data/Processed_Datasets/yaoMouseBrain/metadata/yaoMouseBrain_default_metadata.Rds")
-meta <- unique(meta[,c("patient", "sample", "group","joint_region_label")])
-dist_mat <- readRDS("../../results/Processed_Datasets/yaoMouseBrain/yaoMouseBrain_default/yaoMouseBrain_default_dist_mat.Rds")
-meta$joint_region_label[which(meta$joint_region_label == "RHP")] = "PPP-SP"
+meta <- unique(meta[,c("patient", "sample", "group")])
+dist_mat_GMM_PCA <- readRDS("../../results/Processed_Datasets/yaoMouseBrain/yaoMouseBrain_default/yaoMouseBrain_default_PCA_GMM_matrix.Rds")
+levels(meta$group)[which(levels(meta$group) == "RHP")] = "PPP-SP"
+#meta$group[which(meta$group == "RHP")] = "PPP-SP"
 
-meta$`brain region` <- ifelse(meta$joint_region_label %in% c("HIP","ENT", "PPP-SP"), "HFP", "CTX")
-meta$joint_region_label[which(meta$joint_region_label ==  "SSs-GU-VISC-AIp")] = "SSs-GU-VISC-AIp "
-
+meta$`brain region` <- ifelse(meta$group %in% c("HIP","ENT", "PPP-SP"), "HFP", "CTX")
+#meta$joint_region_label[which(meta$group ==  "SSs-GU-VISC-AIp")] = "SSs-GU-VISC-AIp "
+levels(meta$group)[which(levels(meta$group) == "SSs-GU-VISC-AIp")] = "SSs-GU-VISC-AIp "
 ```
 
 
@@ -70,18 +72,18 @@ meta$joint_region_label[which(meta$joint_region_label ==  "SSs-GU-VISC-AIp")] = 
 ```{r}
 #dist_mat = dist_mat_GMM_PCA
 pdf("../../results/fig/allenmouseheatmap_GMM.pdf", width = 10, height = 8, onefile = FALSE)
-aheatmap(dist_mat[meta$donor_label,meta$donor_label], color = colfunc(51),
-         annCol = list("Categories" = meta$joint_region_label,
-                       "Categories" = meta$joint_region_label,
-                       "Categories" = meta$joint_region_label,
+aheatmap(dist_mat_GMM_PCA[as.character(meta$sample),as.character(meta$sample)], color = colfunc(51),
+         annCol = list("Categories" = meta$group,
+                       "Categories" = meta$group,
+                       "Categories" = meta$group,
                        "Brain Regions" = meta$`brain region`,
                        "Brain Regions" = meta$`brain region`,
                        "Brain Regions" = meta$`brain region`),
-         annColors = list('Categories' = c(safe_colorblind_palette, colorBlindBlack8),
-                          "Brain Regions" = colorBlindBlack8[7:8]),
+         annColors = list('Categories' = c(safe_colorblind_palette, colorBlindBlack8[-3]),
+                          "Brain Regions" = colorBlindBlack8[8:9]),
          Colv = T, Rowv = FALSE,
-         labRow = rep("", nrow(dist_mat)),
-         labCol = rep("", nrow(dist_mat)),
+         labRow = rep("", nrow(dist_mat_GMM_PCA)),
+         labCol = rep("", nrow(dist_mat_GMM_PCA)),
          fontsize = 19, main = "",
          treeheight = 60)
 dev.off()
@@ -94,13 +96,14 @@ dev.off()
 
 
 ```{r}
+meta = as.data.frame(meta)
+df <- plotMDS(sqrt(dist_mat_GMM_PCA),n = 2, x = meta, sample_id = "sample", group_id = "group")$mds
 
-df <- plotMDS(sqrt(dist_mat_GMM_PCA),n = 2, x = meta, sample_id = "donor_label", group_id = "joint_region_label")$mds
 pdf("../../results/fig/allenmousemds_GMM_sqrt.pdf", width = 7, height = 7)
 ggplot(df, aes(x = Coordinate1, y = Coordinate2))+
- geom_point(aes(col = joint_region_label, shape = `brain region`),size = 5) +
-  scale_shape_manual(values=c(16, 3))+
-  scale_color_manual(values=c(safe_colorblind_palette,colorBlindBlack8)) +
+ geom_point(aes(col = group, shape = brain.region),size = 5) +
+  scale_shape_manual(values=c(16, 17))+
+  scale_color_manual(values=c(safe_colorblind_palette,colorBlindBlack8[-3])) +
     theme_bw()  +
   guides(color = "none",
          shape = guide_legend(title = "Brain Regions"))+
@@ -140,7 +143,7 @@ aheatmap(dist_mat_GMM_PCA, color = colfunc(51),
          annCol = list("Tissue Source" = meta$group,
                        "Tissue Source" = meta$group,
                        "Tissue Source" = meta$group),
-         annColors = list("Tissue Source" = colorBlindBlack8),
+         annColors = list("Tissue Source" = colorBlindBlack8[-4]),
          Colv = T, Rowv = FALSE,
          labRow = rep("", nrow(meta)), labCol = rep("", nrow(meta)),fontsize = 19, main = "", treeheight = 40)
 
@@ -163,7 +166,7 @@ ggplot(df, aes(x = Coordinate1, y = Coordinate2)) +
         plot.margin = unit(c(0.5,1,0.5,1),"cm"),
         axis.title.x = element_text(vjust = -1),
         axis.title.y = element_text(vjust = 2)) +
-  scale_color_manual(values=colorBlindBlack8)
+  scale_color_manual(values=colorBlindBlack8[-4])
 dev.off()
 
 ```
@@ -173,10 +176,10 @@ dev.off()
 
 ```{r}
 meta = readRDS("../../data/Processed_Datasets/stephensonCOVIDPBMC/metadata/stephensonCOVIDPBMC_default_metadata.Rds")
-meta <- unique(meta[, c("patient", "group", "sample", "Site")])
-dist_mat_GMM_PCA <- readRDS("../../results/Processed_Datasets/stephensonCOVIDPBMC/stephensonCOVIDPBMC_default/stephensonCOVIDPBMC_default_GMM_PCA_matrix.Rds")
+meta <- unique(meta[, c("patient", "Status", "sample", "batch")])
+dist_mat_GMM_PCA <- readRDS("../../results/Processed_Datasets/stephensonCOVIDPBMC/stephensonCOVIDPBMC_default/stephensonCOVIDPBMC_default_PCA_GMM_matrix.Rds")
 
-levels(meta$Site)[1] = "Cambridge "
+levels(meta$batch)[1] = "Cambridge "
 ```
 
 ## all patients
@@ -185,15 +188,15 @@ levels(meta$Site)[1] = "Cambridge "
 ```{r}
 pdf("../../results/supplement/covid143heatmap_GMM.pdf",         # File name
     width = 8, height = 6, onefile = FALSE)  
-aheatmap(dist_mat_GMM_PCA[meta$patient_id, meta$patient_id], color = colfunc(51),
+aheatmap(dist_mat_GMM_PCA[as.character(meta$sample), as.character(meta$sample)], color = colfunc(51),
          annCol = list(Status = meta$Status,
                        Status = meta$Status,
                        Status = meta$Status,
-                       Site = meta$Site,
-                       Site = meta$Site,
-                       Site = meta$Site),
+                       Site = meta$batch,
+                       Site = meta$batch,
+                       Site = meta$batch),
          annColors = list(Status = safe_colorblind_palette,
-                          Site = colorBlindBlack8),
+                          Site = colorBlindBlack8[-4]),
          labRow = rep("", nrow(meta)), labCol = rep("", nrow(meta)),
          Colv = T, Rowv = FALSE,
          fontsize = 18,
@@ -201,10 +204,10 @@ aheatmap(dist_mat_GMM_PCA[meta$patient_id, meta$patient_id], color = colfunc(51)
 
 dev.off()
 
-df = plotMDS(sqrt(dist_mat_GMM_PCA),n = 2, x = meta, sample_id = "patient_id", group_id = "Status")$mds
+df = plotMDS(sqrt(dist_mat_GMM_PCA),n = 2, x = meta, sample_id = "sample", group_id = "Status")$mds
 covid_legend = ggplot(df, aes(x = Coordinate1, y = Coordinate2)) + 
   geom_point(aes(col = Status,
-                 shape = Site), size =4) +
+                 shape = batch), size =4) +
       scale_shape_manual(values=c(16, 7,3))+
   scale_color_manual(values=colorBlindBlack8) +
     theme_bw() +
@@ -222,7 +225,7 @@ dev.off()
 pdf("../../results/fig/covid143allGMMPCA.pdf", width = 7, height = 6)
 
 ggplot(df, aes(x = Coordinate1, y = Coordinate2)) + 
-  geom_point(aes(shape = Site,
+  geom_point(aes(shape = batch,
                  col = Status), size =4) +
   scale_color_manual(values=colorBlindBlack8) +
     theme_bw() +
@@ -241,9 +244,9 @@ dev.off()
 ## COVID and healthy patients
 
 ```{r}
-subsamples <- meta$patient_id[meta$Status %in% c("Covid", "Healthy")]
-meta_sub <- meta[meta$patient_id %in% subsamples,]
-dist_mat_sub <- dist_mat_GMM_PCA[subsamples, subsamples]
+subsamples <- meta$sample[meta$Status %in% c("Covid", "Healthy")]
+meta_sub <- meta[meta$sample %in% subsamples,]
+dist_mat_sub <- dist_mat_GMM_PCA[as.character(subsamples), as.character(subsamples)]
 
 
 ```
@@ -259,10 +262,10 @@ dist_mat_sub <- dist_mat_GMM_PCA[subsamples, subsamples]
 
 
 
-df_sqrt = plotMDS(sqrt(dist_mat_sub),n = 2, x = meta_sub, sample_id = "patient_id", group_id = "Status")$mds
+df_sqrt = plotMDS(sqrt(dist_mat_sub),n = 2, x = meta_sub, sample_id = "sample", group_id = "Status")$mds
 pdf("../../results/fig/covid143GMMpca.pdf", width = 7, height = 6)
 ggplot(df_sqrt, aes(x = Coordinate1, y = Coordinate2)) + 
-  geom_point(aes(shape = Site,
+  geom_point(aes(shape = batch,
                  col = Status), size =4) +
   scale_color_manual(values=colorBlindBlack8) +
     theme_bw() +
@@ -378,14 +381,14 @@ dev.off()
 
 ```{r}
 
-meta = readRDS("../../data/Processed_Datasets/pelkaLupus/metadata/pelkaLupus_default_metadata.Rds")
-meta <- unique(meta[, c("patient", "group", "sample")])
+meta = readRDS("../../data/Processed_Datasets/perezLupus/metadata/perezLupus_default_metadata.Rds")
+meta <- unique(meta[, c("patient", "group", "sample", "batch")])
 levels(meta$group)[which(levels(meta$group) == "na")] = "normal"
 meta$batch_id = 
-dist_mat_GMM_PCA <- readRDS("../../results/Processed_Datasets/pelkaLupus/pelka_default/pelkaLupus_default_PCA_GMM_matrix.Rds")
+dist_mat_GMM_PCA <- readRDS("../../results/Processed_Datasets/perezLupus/perez_default/perezLupus_default_PCA_GMM_matrix.Rds")
 
-dist_mat_GMM_har <- readRDS("../../results/Processed_Datasets/pelkaLupus/pelka_default/pelkaLupus_default_HarmonyBatch_GMM_matrix.Rds")
-meta$disease_state = str_to_title(meta$disease_state)
+dist_mat_GMM_har <- readRDS("../../results/Processed_Datasets/perezLupus/perez_default/perezLupus_default_HarmonyBatch_GMM_matrix.Rds")
+meta$group = str_to_title(meta$group)
 
 #meta$batch_id = paste0(meta$donor_uuid, "_", meta$Processing_Cohort)
 #levels(meta$disease_state)[which(levels(meta$disease_state) == "na")] = "normal"
@@ -397,9 +400,9 @@ meta$disease_state = str_to_title(meta$disease_state)
 
 ```{r }
 
-data = plotMDS(sqrt(dist_mat_GMM_PCA),n = 2, x = meta, sample_id = "batch_id", group_id = "disease_status")$mds
+data = plotMDS(sqrt(dist_mat_GMM_PCA),n = 2, x = meta, sample_id = "sample", group_id = "group")$mds
 perez_legend = ggplot(data, aes(x = Coordinate1, y = Coordinate2)) +
-  geom_point(aes(col = disease_state, shape = Processing_Cohort),
+  geom_point(aes(col = group, shape = batch),
              size = 4)+
   theme_bw()+
   theme(text = element_text(size = 20))+
@@ -417,7 +420,7 @@ dev.off()
 
 pdf("../../results/fig/perez_GMMpca_sqrt.pdf", width = 7, height = 6)
 ggplot(data, aes(x = Coordinate1, y = Coordinate2), size = 2) +
-  geom_point(aes(col = disease_state, shape = Processing_Cohort),
+  geom_point(aes(col = group, shape = batch),
              size = 4)+
   scale_color_manual(values=colorBlindBlack8) +
     theme_bw() +
@@ -429,7 +432,7 @@ dev.off()
 pdf("../../results/fig/perez_GMMhar_sqrt.pdf", width = 7, height = 6)
 data = plotMDS(sqrt(dist_mat_GMM_har),n = 2, x = meta, sample_id = "batch_id", group_id = "disease_state")$mds
 ggplot(data, aes(x = Coordinate1, y = Coordinate2)) +
-  geom_point(aes(col = disease_state, shape = Processing_Cohort), size = 4)+
+  geom_point(aes(col = group, shape = batch), size = 4)+
   scale_color_manual(values=colorBlindBlack8) +
     theme_bw() +
   theme(text = element_text(size = 25),

@@ -1,7 +1,7 @@
 slurm_arrayid <- Sys.getenv('SLURM_ARRAY_TASK_ID')
 print(slurm_arrayid)
 
-#library(Seurat)
+library(Seurat)
 library(popPackage)
 library(reticulate)
 library(sceasy)
@@ -12,7 +12,7 @@ scvi <- import("scvi", convert = FALSE)
 
 source("muscat_sim_serials.R")
 #source("True_KLv2.R")
-load("../../results/COVID_143/muscat_1sample_f5s.Rda")
+load("../../results/simulation/data/muscat_1sample_f5s.Rda")
 x@rowRanges@elementMetadata$beta$cluster_id  =
   DataFrame(apply(x@rowRanges@elementMetadata$beta$cluster_id , 2, function(x) x/2))
 

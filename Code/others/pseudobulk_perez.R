@@ -3,13 +3,16 @@ library(Seurat)
 library(SingleCellExperiment)
 library(muscat)
 
-sce = readRDS("../../data/Processed_Datasets/perezLupus/perezLupus_default/perezLupus_default.Rds")
-sce$sample_id = paste0(sce$sample_uuid,"_", sce$Processing_Cohort)
-
+sce = readRDS("../../data/Processed_Datasets/perezLupus/perezLupus_default/initial_sce.Rds")
+#sce$sample_id = paste0(sce$sample_uuid,"_", sce$Processing_Cohort)
+sce@assays@data@listData$counts@seed@filepath = "../../data/Processed_Datasets/perezLupus/raw_files/scRNA_raw_cleaned.h5ad"
+counts = counts(sce)
+metadata = colData(sce)
+sce = SingleCellExperiment(list(counts=counts), colData = metadata)
 
 pb <- aggregateData(sce, assay = "counts", 
                     fun = "sum", 
-                    by = c("sample_id"))
+                    by = c("sample"))
 names(pb@assays) = "counts"
 
 counts = pb@assays@data@listData$counts

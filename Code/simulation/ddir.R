@@ -1,6 +1,4 @@
-if(!dir.exists("../../results/simulation/distmat/clusprop_V3/Setting1/25_50/")){
-  dir.create("../../results/simulation/distmat/clusprop_V3/Setting1/25_50/")
-}
+
 
 # baseline
 dir.create("../../results/simulation/distmat/baseline/sd013_lfc005/")

@@ -30,9 +30,10 @@ library(mclust)
 library(ggplot2)
 library(MASS)
 library(umap)
+library(matrixStats)
 
 meta = readRDS("../../data/Processed_Datasets/stephensonCOVIDPBMC/metadata/stephensonCOVIDPBMC_default_metadata.Rds")
-meta <- unique(meta[, c("patient", "group", "sample", "Site")])
+meta <- unique(meta[, c("patient", "Status", "sample", "batch")])
 dist_mat_GMM_PCA <- readRDS("../../results/Processed_Datasets/stephensonCOVIDPBMC/stephensonCOVIDPBMC_default/stephensonCOVIDPBMC_default_GMM_PCA_matrix.Rds")
 
 
@@ -40,18 +41,12 @@ dist_mat_GMM_PCA <- readRDS("../../results/Processed_Datasets/stephensonCOVIDPBM
 
 
 ```{r distance_mat}
-plot_df$patient_id = as.character(plot_df$patient_id)
-meta_sub = unique(plot_df[, c("patient_id", "Status",  "Site")])
-meta_sub$patient_id = as.character(meta_sub$patient_id)
-meta_sub$Status = as.character(meta_sub$Status)
 
-rm(plot_df)
 library(popPackage)
 
-subsamples <- meta_sub$patient_id[meta_sub$Status %in% c("Covid", "Healthy")]
-meta_sub <- meta_sub[meta_sub$patient_id %in% subsamples,]
-GMM_PCA <- dist_mat_GMM_PCA[subsamples, subsamples]
-s, subsamples]
+subsamples <- meta$sample[meta$Status %in% c("Covid", "Healthy")]
+meta_sub <- meta[meta$sample %in% subsamples,]
+GMM_PCA <- dist_mat_GMM_PCA[as.character(subsamples), as.character(subsamples)]
 
 ```
 
@@ -68,7 +63,7 @@ my.cv.svm=function(x,Kfold,folds,cost, gamma){
   for (j in 1:Kfold){
      train<-x[folds!=j,]
      test<-x[folds==j,]
-     svm.fit=svm(as.factor(Status)~.-patient_id-Site,data=train,kernel="radial",cost=cost, gamma = gamma)
+     svm.fit=svm(Status~.-sample-batch-patient,data=train,kernel="radial",cost=cost, gamma = gamma)
      svm.predict=predict(svm.fit,newdata = test)
      fold.error[j]=mean(svm.predict!=test$Status)
   }
@@ -83,7 +78,7 @@ my.cv.svm_site=function(x,Kfold,folds,cost, gamma){
   for (j in 1:Kfold){
      train<-x[folds!=j,]
      test<-x[folds==j,]
-     svm.fit=svm(as.factor(Status)~.-patient_id,data=train,kernel="radial",cost=cost, gamma = gamma)
+     svm.fit=svm(Status~.-patient-sample,data=train,kernel="radial",cost=cost, gamma = gamma)
      svm.predict=predict(svm.fit,newdata = test)
      fold.error[j]=mean(svm.predict!=test$Status)
   }
@@ -101,9 +96,9 @@ svm.fun = function(df, ids, nfold, cost, gamma, withsite = TRUE){
   for(c in 1:length(cost)){
    for(g in 1:length(gamma)){
      if(withsite == TRUE){
-           my.cv.results[c,g] = my.cv.svm(x=training, folds = folds,Kfold = nfold,cost = cost[c], gamma = gamma[g])
+           my.cv.results[c,g] = my.cv.svm_site(x=training, folds = folds,Kfold = nfold,cost = cost[c], gamma = gamma[g])
      }else{
-       my.cv.results[c,g] = my.cv.svm_site(training, folds = folds,Kfold = nfold,cost = cost[c], gamma = gamma[g])
+       my.cv.results[c,g] = my.cv.svm(training, folds = folds,Kfold = nfold,cost = cost[c], gamma = gamma[g])
      }
 
     }
@@ -114,10 +109,10 @@ svm.fun = function(df, ids, nfold, cost, gamma, withsite = TRUE){
   cat("best gamma value:", gamma[bestg], "\n")
   cat("CV error:", my.cv.results[bestc, bestg], "\n")
   if(withsite == TRUE){
-      svm_training = svm(as.factor(Status) ~ . - patient_id - Site, data=training, 
+      svm_training = svm(Status ~ . - patient-sample, data=training, 
           method="C-classification", kernal="radial", cost = cost[bestc], gamma = gamma[bestg])
   }else{
-      svm_training = svm(as.factor(Status) ~ . - patient_id, data=training, 
+      svm_training = svm(Status ~ . - patient-sample-batch, data=training, 
           method="C-classification", kernal="radial", cost = cost[bestc], gamma = gamma[bestg])
   }
 
@@ -133,7 +128,7 @@ svm.fun = function(df, ids, nfold, cost, gamma, withsite = TRUE){
 ```
 
 ```{r}
-df_GMM_pca = plotMDS(GMM_PCA,n = 10, x = meta_sub, sample_id = "patient_id", group_id = "Status")$mds
+df_GMM_pca = plotMDS(GMM_PCA,n = 10, x = meta_sub, sample_id = "sample", group_id = "Status")$mds
 
 
 #df$Status = as.character(df$Status)

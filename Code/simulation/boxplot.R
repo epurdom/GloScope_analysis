@@ -79,6 +79,7 @@ for(i in sd){
   }
 }
 
+save(sd_list, file = "../../results/simulation/boxplot/sigma_wA_dist.Rda")
 
 
 ########################## alpha within
@@ -104,6 +105,7 @@ for(i in alpha){
   }
 }
 
+save(alpha_list, file = "../../results/simulation/boxplot/alpha_w_cluster.Rda")
 
 ################################### cluster between
 setting = c("Setting1", "Setting3")
@@ -132,6 +134,8 @@ for(i in setting){
     }    
   }
 }
+
+save(clus_list, file = "../../results/simulation/boxplot/cluster_b_dist.Rda")
 
 ############################################# lfcpde
 
@@ -162,3 +166,4 @@ for(i in pde){
   }
 }
 
+save(lfc_pde, file = "../../results/simulation/boxplot/lfcpde_b_dist.Rda")

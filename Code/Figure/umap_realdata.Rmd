@@ -5,13 +5,22 @@ date: "2022-09-12"
 ---
 ```{r}
 library(ggplot2)
-library(popPackage)
+library(dplyr)
+library(Seurat)
+#library(popPackage)
 safe_colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77",
                              "#117733", "#332288", "#AA4499", 
                              "#44AA99", "#999933", "#882255",
                              "#661100", "#6699CC", "#888888")
 colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", 
-                       "#F0E442", "#0072B2", "#D55E00", "#CC79A7")                          
+                       "#F0E442", "#0072B2", "#D55E00", "#CC79A7")  
+                       
+#colorBlindBlack8  <- c("#000000", "#E69F00", "lightpink1","#CC79A7", 
+#                       "#009E73", "#F0E442", "#0072B2", "#D55E00")
+#safe_colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77",
+#                             "#117733", "#332288", "#AA4499", 
+#                             "#44AA99", "#999933", "#882255",
+#                             "purple", "blue1", "#888888")  
 ```
 
 ```{r}
@@ -40,6 +49,8 @@ dev.off()
 
 ```{r}
 myseurat = readRDS("../../data/Processed_Datasets/stephensonCOVIDPBMC/stephensonCOVIDPBMC_default/stephensonCOVIDPBMC_default.Rds")
+myseurat = myseurat %>%
+ RunUMAP(reduction = "pca", dims = 1:30)
 
 plot_df = cbind(myseurat@meta.data, myseurat@reductions$umap@cell.embeddings)
 
@@ -47,11 +58,11 @@ plot_df = cbind(myseurat@meta.data, myseurat@reductions$umap@cell.embeddings)
 
 ```{r}
 set.seed(1)
-pdf("../../results/supplement/umap_covid143.pdf",width = 10, height = 6)
+pdf("../../../../results/supplement/umap_covid143.pdf",width = 10, height = 6)
 ggplot(plot_df[sample(seq_len(nrow(plot_df)),50000),], aes(x = UMAP_1, y = UMAP_2))+
-  geom_point(aes(col = initial_clustering), size = 0.5) +
+  geom_point(aes(col = cell_type), size = 0.5) +
   scale_color_manual(values = c(safe_colorblind_palette,colorBlindBlack8)) +
-  facet_wrap(~ as.character(Site)) +
+  facet_wrap(~ as.character(batch)) +
   theme_bw() +
   guides(colour = guide_legend(override.aes = list(size=4),
                                title = "Cell Type")) +

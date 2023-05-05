@@ -7,9 +7,9 @@ myseurat = readRDS("../../data/Processed_Datasets/stephensonCOVIDPBMC/stephenson
 sce <- as.SingleCellExperiment(myseurat, assay = "raw")
 rm(myseurat)
 sce <- prepSCE(sce, 
-                   kid = "initial_clustering", # subpopulation assignments
+                   kid = "cell_type", # subpopulation assignments
                    gid = "Status",  # group IDs (ctrl/stim)
-                   sid = "patient_id",   # sample IDs (ctrl/stim.1234)
+                   sid = "sample",   # sample IDs (ctrl/stim.1234)
                    drop = TRUE)
 
 
