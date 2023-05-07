@@ -2,7 +2,7 @@ slurm_arrayid <- Sys.getenv('SLURM_ARRAY_TASK_ID')
 print(slurm_arrayid)
 
 library(Seurat)
-library(popPackage)
+library(GloScope)
 library(reticulate)
 library(sceasy)
 reticulate::use_condaenv("scvi-env", required=TRUE)

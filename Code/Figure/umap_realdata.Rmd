@@ -23,11 +23,17 @@ colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73",
 #                             "purple", "blue1", "#888888")  
 ```
 
-```{r}
+```{r eval = F}
 myseurat = readRDS("../../data/Processed_Datasets/pelkaCRC/pelkaCRC_default/pelkaCRC_default.Rds")
 
-plot_df = cbind(myseurat@meta.data, myseurat@reductions$umap@cell.embeddings)
+myseurat = myseurat %>%
+ RunUMAP(reduction = "pca", dims = 1:30)
 
+plot_df = cbind(myseurat@meta.data, myseurat@reductions$umap@cell.embeddings)
+```
+
+
+```{r eval = F}
 set.seed(1)
 pdf("../../results/supplement/umap_pelka.pdf",width = 10, height = 6)
 ggplot(plot_df[sample(seq_len(nrow(plot_df)),50000),], aes(x = UMAP_1, y = UMAP_2))+
