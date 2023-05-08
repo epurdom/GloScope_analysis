@@ -30,14 +30,11 @@ library(grid)
 library(gridExtra) 
 library(vegan)
 
-# sbatch -p jsteinhardt --wrap="Rscript -e \"rmarkdown::render('paper_figures.Rmd')\""
-#library(ggplotify)
-#library(patchwork)
-#darkcols <- bigPalette
+
 
 colfunc <- colorRampPalette(c("white", "blue1", "purple","red")) # 
     
-#color2 <- bigPalette[17:20]
+
 
 colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9",
                                 "lightpink1","#CC79A7", 
@@ -325,8 +322,8 @@ meta = readRDS("../../data/Processed_Datasets/pelkaCRC/metadata/pelkaCRC_default
 meta <- unique(meta[, c("patient", "group", "sample")])
 dist_mat_GMM_PCA <- readRDS("../../results/Processed_Datasets/pelkaCRC/pelkaCRC_default/pelkaCRC_default_PCA_GMM_matrix.Rds")
 
-meta <- unique(plot_df[, c("PatientTypeID", "MMRStatusTumor")])
-meta = meta[meta$PatientTypeID %in% rownames(dist_mat_GMM_PCA),]
+#meta <- unique(plot_df[, c("PatientTypeID", "MMRStatusTumor")])
+meta = meta[meta$sample %in% rownames(dist_mat_GMM_PCA),]
 ```
 
 
@@ -334,10 +331,10 @@ meta = meta[meta$PatientTypeID %in% rownames(dist_mat_GMM_PCA),]
 
 
 ```{r}
-df = plotMDS(sqrt(dist_mat_GMM_PCA),n = 2, x = meta, sample_id = "PatientTypeID", group_id = "MMRStatusTumor")$mds
+df = plotMDS(sqrt(dist_mat_GMM_PCA),n = 2, x = meta, sample_id = "sample", group_id = "group")$mds
 pdf("../../results/fig/pelka_GMM_mds_sqrt.pdf", width = 8, height = 6)
 ggplot(df, aes(x = Coordinate1, y = Coordinate2))+
-  geom_point(aes(col = MMRStatusTumor), size = 5)+
+  geom_point(aes(col = group), size = 5)+
   labs(color = "Types")+
     theme_bw()+
   theme(text = element_text(size = 30),
@@ -351,8 +348,8 @@ dev.off()
 ```{r}
 
 sub_meta = meta[meta$group != "Normal"]
-sub_dist = dist_mat_GMM_PCA[sub_meta$sample, sub_meta$sample]
-
+sub_dist = dist_mat_GMM_PCA[as.character(sub_meta$sample), as.character(sub_meta$sample)]
+set.seed(1)
 anosim(sub_dist, sub_meta$group)
 ```
 
@@ -366,7 +363,7 @@ meta <- unique(meta[, c("patient", "group", "sample", "batch")])
 levels(meta$group)[which(levels(meta$group) == "na")] = "normal"
 dist_mat_GMM_PCA <- readRDS("../../results/Processed_Datasets/perezLupus/perezLupus_default/perezLupus_default_PCA_GMM_matrix.Rds")
 
-dist_mat_GMM_har <- readRDS("../../results/Processed_Datasets/perezLupus/perez_default/perezLupus_default_HarmonyBatch_GMM_matrix.Rds")
+dist_mat_GMM_har <- readRDS("../../results/Processed_Datasets/perezLupus/perezLupus_default/perezLupus_default_harmony_GMM_matrix.Rds")
 meta$group = str_to_title(meta$group)
 
 #meta$batch_id = paste0(meta$donor_uuid, "_", meta$Processing_Cohort)
@@ -410,7 +407,7 @@ dev.off()
 
 
 
-df = plotMDS(sqrt(dist_mat_GMM_har),n = 2, x = meta, sample_id = "batch_id", group_id = "disease_state")$mds
+df = plotMDS(sqrt(dist_mat_GMM_har),n = 2, x = meta, sample_id = "sample", group_id = "group")$mds
 
 pdf("../../results/fig/perez_GMMhar_sqrt.pdf", width = 7, height = 6)
 ggplot(df, aes(x = Coordinate1, y = Coordinate2)) +
