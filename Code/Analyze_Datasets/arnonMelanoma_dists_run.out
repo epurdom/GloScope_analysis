@@ -1,0 +1,498 @@
+
+R version 4.2.2 Patched (2022-11-10 r83330) -- "Innocent and Trusting"
+Copyright (C) 2022 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> source(here::here("Code","Analyze_Datasets","arnonMelanoma_dists.R"))
+here() starts at /accounts/projects/epurdom/singlecell/pop_data
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+Loading required package: usethis
+ℹ Loading popPackage
+Called from: get_distances(program_vec, dist_params)
+Browse[1]> debug: if (distance_params$dens == "KNN") {
+    distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+        distance_params$dim_reduction, distance_params$ndim, 
+        dist_mat = distance_params$dist, dens = "KNN", k = distance_params$k, 
+        BPPARAM = distance_params$parallel)
+} else if (distance_params$dens == "GMM") {
+    distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+        distance_params$dim_reduction, distance_params$ndim, 
+        dist_mat = distance_params$dist, dens = "GMM", num_components = distance_params$num_components, 
+        r = distance_params$r, varapp = distance_params$varapp, 
+        epapp = distance_params$epapp, BPPARAM = distance_params$parallel)
+} else {
+    stop("Invalid density method specified")
+}
+Browse[2]> debug: if (distance_params$dens == "GMM") {
+    distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+        distance_params$dim_reduction, distance_params$ndim, 
+        dist_mat = distance_params$dist, dens = "GMM", num_components = distance_params$num_components, 
+        r = distance_params$r, varapp = distance_params$varapp, 
+        epapp = distance_params$epapp, BPPARAM = distance_params$parallel)
+} else {
+    stop("Invalid density method specified")
+}
+Browse[2]> debug: distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+    distance_params$dim_reduction, distance_params$ndim, dist_mat = distance_params$dist, 
+    dens = "GMM", num_components = distance_params$num_components, 
+    r = distance_params$r, varapp = distance_params$varapp, epapp = distance_params$epapp, 
+    BPPARAM = distance_params$parallel)
+Browse[2]> debug: save_time <- format(Sys.time(), "%Y-%m-%d-%H-%M-%S")
+Warning message:
+In distMat(reduction_df, distance_params$sample_id, distance_params$dim_reduction,  :
+  Some samples have numbers of cells smaller than the minimum cell number 500 to have reliable results!
+Browse[2]> debug: if (!dir.exists(here::here("results", "Processed_Datasets", dataset_name))) {
+    dir.create((here::here("results", "Processed_Datasets", dataset_name)))
+}
+Browse[2]> debug: if (!dir.exists(here::here("results", "Processed_Datasets", dataset_name, 
+    save_name))) {
+    dir.create((here::here("results", "Processed_Datasets", dataset_name, 
+        save_name)))
+}
+Browse[2]> debug: saveRDS(distance_matrix, here::here("results", "Processed_Datasets", 
+    dataset_name, save_name, paste(name_str, save_time, "_dist_mat.Rds", 
+        sep = "")))
+Browse[2]> debug: saveRDS(distance_params, here::here("results", "Processed_Datasets", 
+    dataset_name, save_name, paste(name_str, save_time, "_dist_params.Rds", 
+        sep = "")))
+Browse[2]> debug: dist_tibble <- dist_to_tibble(distance_matrix, dataset_name, 
+    program_name, distance_params)
+Browse[2]> debug: dist_tibble_list[[index]] <- dist_tibble
+Warning message:
+Using an external vector in selections was deprecated in tidyselect 1.1.0.
+ℹ Please use `all_of()` or `any_of()` instead.
+  # Was:
+  data %>% select(all_columns)
+
+  # Now:
+  data %>% select(all_of(all_columns))
+
+See <https://tidyselect.r-lib.org/reference/faq-external-vector.html>. 
+Browse[2]> debug: saveRDS(dist_tibble, here::here("results", "Processed_Datasets", 
+    dataset_name, save_name, paste(name_str, save_time, "_dist_tibble.Rds", 
+        sep = "")))
+Browse[2]> debug: name_str <- program_vec[index]
+Browse[2]> debug: split_name_str <- strsplit(name_str, "_")[[1]]
+Browse[2]> debug: dataset_name <- split_name_str[1]
+Browse[2]> debug: program_name <- split_name_str[2]
+Browse[2]> debug: save_name <- paste0(dataset_name, "_", ifelse(endsWith(program_name, 
+    ".scvi"), gsub(".{5}$", "", program_name), program_name))
+Browse[2]> debug: distance_params <- dist_list[[index]]
+Browse[2]> debug: reduction_df <- seurat_to_df(dataset_name, program_name, save_name, 
+    distance_params$dim_reduction, sce = sce)
+Browse[2]> debug: set.seed(2)
+Browse[2]> debug: browser()
+Browse[2]> Browse[2]> debug: if (distance_params$dens == "KNN") {
+    distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+        distance_params$dim_reduction, distance_params$ndim, 
+        dist_mat = distance_params$dist, dens = "KNN", k = distance_params$k, 
+        BPPARAM = distance_params$parallel)
+} else if (distance_params$dens == "GMM") {
+    distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+        distance_params$dim_reduction, distance_params$ndim, 
+        dist_mat = distance_params$dist, dens = "GMM", num_components = distance_params$num_components, 
+        r = distance_params$r, varapp = distance_params$varapp, 
+        epapp = distance_params$epapp, BPPARAM = distance_params$parallel)
+} else {
+    stop("Invalid density method specified")
+}
+Browse[2]> debug: distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+    distance_params$dim_reduction, distance_params$ndim, dist_mat = distance_params$dist, 
+    dens = "KNN", k = distance_params$k, BPPARAM = distance_params$parallel)
+Browse[2]> debug: save_time <- format(Sys.time(), "%Y-%m-%d-%H-%M-%S")
+Warning message:
+In distMat(reduction_df, distance_params$sample_id, distance_params$dim_reduction,  :
+  Some samples have numbers of cells smaller than the minimum cell number 500 to have reliable results!
+Browse[2]> debug: if (!dir.exists(here::here("results", "Processed_Datasets", dataset_name))) {
+    dir.create((here::here("results", "Processed_Datasets", dataset_name)))
+}
+Browse[2]> debug: if (!dir.exists(here::here("results", "Processed_Datasets", dataset_name, 
+    save_name))) {
+    dir.create((here::here("results", "Processed_Datasets", dataset_name, 
+        save_name)))
+}
+Browse[2]> debug: saveRDS(distance_matrix, here::here("results", "Processed_Datasets", 
+    dataset_name, save_name, paste(name_str, save_time, "_dist_mat.Rds", 
+        sep = "")))
+Browse[2]> debug: saveRDS(distance_params, here::here("results", "Processed_Datasets", 
+    dataset_name, save_name, paste(name_str, save_time, "_dist_params.Rds", 
+        sep = "")))
+Browse[2]> debug: dist_tibble <- dist_to_tibble(distance_matrix, dataset_name, 
+    program_name, distance_params)
+Browse[2]> debug: dist_tibble_list[[index]] <- dist_tibble
+Browse[2]> debug: saveRDS(dist_tibble, here::here("results", "Processed_Datasets", 
+    dataset_name, save_name, paste(name_str, save_time, "_dist_tibble.Rds", 
+        sep = "")))
+Browse[2]> debug: name_str <- program_vec[index]
+Browse[2]> debug: split_name_str <- strsplit(name_str, "_")[[1]]
+Browse[2]> debug: dataset_name <- split_name_str[1]
+Browse[2]> debug: program_name <- split_name_str[2]
+Browse[2]> debug: save_name <- paste0(dataset_name, "_", ifelse(endsWith(program_name, 
+    ".scvi"), gsub(".{5}$", "", program_name), program_name))
+Browse[2]> debug: distance_params <- dist_list[[index]]
+Browse[2]> debug: reduction_df <- seurat_to_df(dataset_name, program_name, save_name, 
+    distance_params$dim_reduction, sce = sce)
+Browse[2]> debug: set.seed(2)
+Browse[2]> debug: browser()
+Browse[2]> Browse[2]> debug: if (distance_params$dens == "KNN") {
+    distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+        distance_params$dim_reduction, distance_params$ndim, 
+        dist_mat = distance_params$dist, dens = "KNN", k = distance_params$k, 
+        BPPARAM = distance_params$parallel)
+} else if (distance_params$dens == "GMM") {
+    distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+        distance_params$dim_reduction, distance_params$ndim, 
+        dist_mat = distance_params$dist, dens = "GMM", num_components = distance_params$num_components, 
+        r = distance_params$r, varapp = distance_params$varapp, 
+        epapp = distance_params$epapp, BPPARAM = distance_params$parallel)
+} else {
+    stop("Invalid density method specified")
+}
+Browse[2]> debug: if (distance_params$dens == "GMM") {
+    distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+        distance_params$dim_reduction, distance_params$ndim, 
+        dist_mat = distance_params$dist, dens = "GMM", num_components = distance_params$num_components, 
+        r = distance_params$r, varapp = distance_params$varapp, 
+        epapp = distance_params$epapp, BPPARAM = distance_params$parallel)
+} else {
+    stop("Invalid density method specified")
+}
+Browse[2]> debug: distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+    distance_params$dim_reduction, distance_params$ndim, dist_mat = distance_params$dist, 
+    dens = "GMM", num_components = distance_params$num_components, 
+    r = distance_params$r, varapp = distance_params$varapp, epapp = distance_params$epapp, 
+    BPPARAM = distance_params$parallel)
+Browse[2]> debug: save_time <- format(Sys.time(), "%Y-%m-%d-%H-%M-%S")
+Warning message:
+In distMat(reduction_df, distance_params$sample_id, distance_params$dim_reduction,  :
+  Some samples have numbers of cells smaller than the minimum cell number 500 to have reliable results!
+Browse[2]> debug: if (!dir.exists(here::here("results", "Processed_Datasets", dataset_name))) {
+    dir.create((here::here("results", "Processed_Datasets", dataset_name)))
+}
+Browse[2]> debug: if (!dir.exists(here::here("results", "Processed_Datasets", dataset_name, 
+    save_name))) {
+    dir.create((here::here("results", "Processed_Datasets", dataset_name, 
+        save_name)))
+}
+Browse[2]> debug: saveRDS(distance_matrix, here::here("results", "Processed_Datasets", 
+    dataset_name, save_name, paste(name_str, save_time, "_dist_mat.Rds", 
+        sep = "")))
+Browse[2]> debug: saveRDS(distance_params, here::here("results", "Processed_Datasets", 
+    dataset_name, save_name, paste(name_str, save_time, "_dist_params.Rds", 
+        sep = "")))
+Browse[2]> debug: dist_tibble <- dist_to_tibble(distance_matrix, dataset_name, 
+    program_name, distance_params)
+Browse[2]> debug: dist_tibble_list[[index]] <- dist_tibble
+Browse[2]> debug: saveRDS(dist_tibble, here::here("results", "Processed_Datasets", 
+    dataset_name, save_name, paste(name_str, save_time, "_dist_tibble.Rds", 
+        sep = "")))
+Browse[2]> debug: name_str <- program_vec[index]
+Browse[2]> debug: split_name_str <- strsplit(name_str, "_")[[1]]
+Browse[2]> debug: dataset_name <- split_name_str[1]
+Browse[2]> debug: program_name <- split_name_str[2]
+Browse[2]> debug: save_name <- paste0(dataset_name, "_", ifelse(endsWith(program_name, 
+    ".scvi"), gsub(".{5}$", "", program_name), program_name))
+Browse[2]> debug: distance_params <- dist_list[[index]]
+Browse[2]> debug: reduction_df <- seurat_to_df(dataset_name, program_name, save_name, 
+    distance_params$dim_reduction, sce = sce)
+Browse[2]> debug: set.seed(2)
+Browse[2]> debug: browser()
+Browse[2]> Browse[2]> debug: if (distance_params$dens == "KNN") {
+    distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+        distance_params$dim_reduction, distance_params$ndim, 
+        dist_mat = distance_params$dist, dens = "KNN", k = distance_params$k, 
+        BPPARAM = distance_params$parallel)
+} else if (distance_params$dens == "GMM") {
+    distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+        distance_params$dim_reduction, distance_params$ndim, 
+        dist_mat = distance_params$dist, dens = "GMM", num_components = distance_params$num_components, 
+        r = distance_params$r, varapp = distance_params$varapp, 
+        epapp = distance_params$epapp, BPPARAM = distance_params$parallel)
+} else {
+    stop("Invalid density method specified")
+}
+Browse[2]> debug: distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+    distance_params$dim_reduction, distance_params$ndim, dist_mat = distance_params$dist, 
+    dens = "KNN", k = distance_params$k, BPPARAM = distance_params$parallel)
+Browse[2]> debug: save_time <- format(Sys.time(), "%Y-%m-%d-%H-%M-%S")
+Warning message:
+In distMat(reduction_df, distance_params$sample_id, distance_params$dim_reduction,  :
+  Some samples have numbers of cells smaller than the minimum cell number 500 to have reliable results!
+Browse[2]> debug: if (!dir.exists(here::here("results", "Processed_Datasets", dataset_name))) {
+    dir.create((here::here("results", "Processed_Datasets", dataset_name)))
+}
+Browse[2]> debug: if (!dir.exists(here::here("results", "Processed_Datasets", dataset_name, 
+    save_name))) {
+    dir.create((here::here("results", "Processed_Datasets", dataset_name, 
+        save_name)))
+}
+Browse[2]> debug: saveRDS(distance_matrix, here::here("results", "Processed_Datasets", 
+    dataset_name, save_name, paste(name_str, save_time, "_dist_mat.Rds", 
+        sep = "")))
+Browse[2]> debug: saveRDS(distance_params, here::here("results", "Processed_Datasets", 
+    dataset_name, save_name, paste(name_str, save_time, "_dist_params.Rds", 
+        sep = "")))
+Browse[2]> debug: dist_tibble <- dist_to_tibble(distance_matrix, dataset_name, 
+    program_name, distance_params)
+Browse[2]> debug: dist_tibble_list[[index]] <- dist_tibble
+Browse[2]> debug: saveRDS(dist_tibble, here::here("results", "Processed_Datasets", 
+    dataset_name, save_name, paste(name_str, save_time, "_dist_tibble.Rds", 
+        sep = "")))
+Browse[2]> debug: name_str <- program_vec[index]
+Browse[2]> debug: split_name_str <- strsplit(name_str, "_")[[1]]
+Browse[2]> debug: dataset_name <- split_name_str[1]
+Browse[2]> debug: program_name <- split_name_str[2]
+Browse[2]> debug: save_name <- paste0(dataset_name, "_", ifelse(endsWith(program_name, 
+    ".scvi"), gsub(".{5}$", "", program_name), program_name))
+Browse[2]> debug: distance_params <- dist_list[[index]]
+Browse[2]> debug: reduction_df <- seurat_to_df(dataset_name, program_name, save_name, 
+    distance_params$dim_reduction, sce = sce)
+Browse[2]> debug: set.seed(2)
+Browse[2]> debug: browser()
+Browse[2]> Browse[2]> debug: if (distance_params$dens == "KNN") {
+    distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+        distance_params$dim_reduction, distance_params$ndim, 
+        dist_mat = distance_params$dist, dens = "KNN", k = distance_params$k, 
+        BPPARAM = distance_params$parallel)
+} else if (distance_params$dens == "GMM") {
+    distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+        distance_params$dim_reduction, distance_params$ndim, 
+        dist_mat = distance_params$dist, dens = "GMM", num_components = distance_params$num_components, 
+        r = distance_params$r, varapp = distance_params$varapp, 
+        epapp = distance_params$epapp, BPPARAM = distance_params$parallel)
+} else {
+    stop("Invalid density method specified")
+}
+Browse[2]> debug: if (distance_params$dens == "GMM") {
+    distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+        distance_params$dim_reduction, distance_params$ndim, 
+        dist_mat = distance_params$dist, dens = "GMM", num_components = distance_params$num_components, 
+        r = distance_params$r, varapp = distance_params$varapp, 
+        epapp = distance_params$epapp, BPPARAM = distance_params$parallel)
+} else {
+    stop("Invalid density method specified")
+}
+Browse[2]> debug: distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+    distance_params$dim_reduction, distance_params$ndim, dist_mat = distance_params$dist, 
+    dens = "GMM", num_components = distance_params$num_components, 
+    r = distance_params$r, varapp = distance_params$varapp, epapp = distance_params$epapp, 
+    BPPARAM = distance_params$parallel)
+Browse[2]> debug: save_time <- format(Sys.time(), "%Y-%m-%d-%H-%M-%S")
+Warning message:
+In distMat(reduction_df, distance_params$sample_id, distance_params$dim_reduction,  :
+  Some samples have numbers of cells smaller than the minimum cell number 500 to have reliable results!
+Browse[2]> debug: if (!dir.exists(here::here("results", "Processed_Datasets", dataset_name))) {
+    dir.create((here::here("results", "Processed_Datasets", dataset_name)))
+}
+Browse[2]> debug: if (!dir.exists(here::here("results", "Processed_Datasets", dataset_name, 
+    save_name))) {
+    dir.create((here::here("results", "Processed_Datasets", dataset_name, 
+        save_name)))
+}
+Browse[2]> debug: saveRDS(distance_matrix, here::here("results", "Processed_Datasets", 
+    dataset_name, save_name, paste(name_str, save_time, "_dist_mat.Rds", 
+        sep = "")))
+Browse[2]> debug: saveRDS(distance_params, here::here("results", "Processed_Datasets", 
+    dataset_name, save_name, paste(name_str, save_time, "_dist_params.Rds", 
+        sep = "")))
+Browse[2]> debug: dist_tibble <- dist_to_tibble(distance_matrix, dataset_name, 
+    program_name, distance_params)
+Browse[2]> debug: dist_tibble_list[[index]] <- dist_tibble
+Browse[2]> debug: saveRDS(dist_tibble, here::here("results", "Processed_Datasets", 
+    dataset_name, save_name, paste(name_str, save_time, "_dist_tibble.Rds", 
+        sep = "")))
+Browse[2]> debug: name_str <- program_vec[index]
+Browse[2]> debug: split_name_str <- strsplit(name_str, "_")[[1]]
+Browse[2]> debug: dataset_name <- split_name_str[1]
+Browse[2]> debug: program_name <- split_name_str[2]
+Browse[2]> debug: save_name <- paste0(dataset_name, "_", ifelse(endsWith(program_name, 
+    ".scvi"), gsub(".{5}$", "", program_name), program_name))
+Browse[2]> debug: distance_params <- dist_list[[index]]
+Browse[2]> debug: reduction_df <- seurat_to_df(dataset_name, program_name, save_name, 
+    distance_params$dim_reduction, sce = sce)
+Browse[2]> debug: set.seed(2)
+Browse[2]> debug: browser()
+Browse[2]> Browse[2]> debug: if (distance_params$dens == "KNN") {
+    distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+        distance_params$dim_reduction, distance_params$ndim, 
+        dist_mat = distance_params$dist, dens = "KNN", k = distance_params$k, 
+        BPPARAM = distance_params$parallel)
+} else if (distance_params$dens == "GMM") {
+    distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+        distance_params$dim_reduction, distance_params$ndim, 
+        dist_mat = distance_params$dist, dens = "GMM", num_components = distance_params$num_components, 
+        r = distance_params$r, varapp = distance_params$varapp, 
+        epapp = distance_params$epapp, BPPARAM = distance_params$parallel)
+} else {
+    stop("Invalid density method specified")
+}
+Browse[2]> debug: distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+    distance_params$dim_reduction, distance_params$ndim, dist_mat = distance_params$dist, 
+    dens = "KNN", k = distance_params$k, BPPARAM = distance_params$parallel)
+Browse[2]> debug: save_time <- format(Sys.time(), "%Y-%m-%d-%H-%M-%S")
+Warning message:
+In distMat(reduction_df, distance_params$sample_id, distance_params$dim_reduction,  :
+  Some samples have numbers of cells smaller than the minimum cell number 500 to have reliable results!
+Browse[2]> debug: if (!dir.exists(here::here("results", "Processed_Datasets", dataset_name))) {
+    dir.create((here::here("results", "Processed_Datasets", dataset_name)))
+}
+Browse[2]> debug: if (!dir.exists(here::here("results", "Processed_Datasets", dataset_name, 
+    save_name))) {
+    dir.create((here::here("results", "Processed_Datasets", dataset_name, 
+        save_name)))
+}
+Browse[2]> debug: saveRDS(distance_matrix, here::here("results", "Processed_Datasets", 
+    dataset_name, save_name, paste(name_str, save_time, "_dist_mat.Rds", 
+        sep = "")))
+Browse[2]> debug: saveRDS(distance_params, here::here("results", "Processed_Datasets", 
+    dataset_name, save_name, paste(name_str, save_time, "_dist_params.Rds", 
+        sep = "")))
+Browse[2]> debug: dist_tibble <- dist_to_tibble(distance_matrix, dataset_name, 
+    program_name, distance_params)
+Browse[2]> debug: dist_tibble_list[[index]] <- dist_tibble
+Browse[2]> debug: saveRDS(dist_tibble, here::here("results", "Processed_Datasets", 
+    dataset_name, save_name, paste(name_str, save_time, "_dist_tibble.Rds", 
+        sep = "")))
+Browse[2]> debug: name_str <- program_vec[index]
+Browse[2]> debug: split_name_str <- strsplit(name_str, "_")[[1]]
+Browse[2]> debug: dataset_name <- split_name_str[1]
+Browse[2]> debug: program_name <- split_name_str[2]
+Browse[2]> debug: save_name <- paste0(dataset_name, "_", ifelse(endsWith(program_name, 
+    ".scvi"), gsub(".{5}$", "", program_name), program_name))
+Browse[2]> debug: distance_params <- dist_list[[index]]
+Browse[2]> debug: reduction_df <- seurat_to_df(dataset_name, program_name, save_name, 
+    distance_params$dim_reduction, sce = sce)
+Browse[2]> debug: set.seed(2)
+Browse[2]> debug: browser()
+Browse[2]> Browse[2]> debug: if (distance_params$dens == "KNN") {
+    distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+        distance_params$dim_reduction, distance_params$ndim, 
+        dist_mat = distance_params$dist, dens = "KNN", k = distance_params$k, 
+        BPPARAM = distance_params$parallel)
+} else if (distance_params$dens == "GMM") {
+    distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+        distance_params$dim_reduction, distance_params$ndim, 
+        dist_mat = distance_params$dist, dens = "GMM", num_components = distance_params$num_components, 
+        r = distance_params$r, varapp = distance_params$varapp, 
+        epapp = distance_params$epapp, BPPARAM = distance_params$parallel)
+} else {
+    stop("Invalid density method specified")
+}
+Browse[2]> debug: if (distance_params$dens == "GMM") {
+    distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+        distance_params$dim_reduction, distance_params$ndim, 
+        dist_mat = distance_params$dist, dens = "GMM", num_components = distance_params$num_components, 
+        r = distance_params$r, varapp = distance_params$varapp, 
+        epapp = distance_params$epapp, BPPARAM = distance_params$parallel)
+} else {
+    stop("Invalid density method specified")
+}
+Browse[2]> debug: distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+    distance_params$dim_reduction, distance_params$ndim, dist_mat = distance_params$dist, 
+    dens = "GMM", num_components = distance_params$num_components, 
+    r = distance_params$r, varapp = distance_params$varapp, epapp = distance_params$epapp, 
+    BPPARAM = distance_params$parallel)
+Browse[2]> debug: save_time <- format(Sys.time(), "%Y-%m-%d-%H-%M-%S")
+Warning message:
+In distMat(reduction_df, distance_params$sample_id, distance_params$dim_reduction,  :
+  Some samples have numbers of cells smaller than the minimum cell number 500 to have reliable results!
+Browse[2]> debug: if (!dir.exists(here::here("results", "Processed_Datasets", dataset_name))) {
+    dir.create((here::here("results", "Processed_Datasets", dataset_name)))
+}
+Browse[2]> debug: if (!dir.exists(here::here("results", "Processed_Datasets", dataset_name, 
+    save_name))) {
+    dir.create((here::here("results", "Processed_Datasets", dataset_name, 
+        save_name)))
+}
+Browse[2]> debug: saveRDS(distance_matrix, here::here("results", "Processed_Datasets", 
+    dataset_name, save_name, paste(name_str, save_time, "_dist_mat.Rds", 
+        sep = "")))
+Browse[2]> debug: saveRDS(distance_params, here::here("results", "Processed_Datasets", 
+    dataset_name, save_name, paste(name_str, save_time, "_dist_params.Rds", 
+        sep = "")))
+Browse[2]> debug: dist_tibble <- dist_to_tibble(distance_matrix, dataset_name, 
+    program_name, distance_params)
+Browse[2]> debug: dist_tibble_list[[index]] <- dist_tibble
+Browse[2]> debug: saveRDS(dist_tibble, here::here("results", "Processed_Datasets", 
+    dataset_name, save_name, paste(name_str, save_time, "_dist_tibble.Rds", 
+        sep = "")))
+Browse[2]> debug: name_str <- program_vec[index]
+Browse[2]> debug: split_name_str <- strsplit(name_str, "_")[[1]]
+Browse[2]> debug: dataset_name <- split_name_str[1]
+Browse[2]> debug: program_name <- split_name_str[2]
+Browse[2]> debug: save_name <- paste0(dataset_name, "_", ifelse(endsWith(program_name, 
+    ".scvi"), gsub(".{5}$", "", program_name), program_name))
+Browse[2]> debug: distance_params <- dist_list[[index]]
+Browse[2]> debug: reduction_df <- seurat_to_df(dataset_name, program_name, save_name, 
+    distance_params$dim_reduction, sce = sce)
+Browse[2]> debug: set.seed(2)
+Browse[2]> debug: browser()
+Browse[2]> Browse[2]> debug: if (distance_params$dens == "KNN") {
+    distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+        distance_params$dim_reduction, distance_params$ndim, 
+        dist_mat = distance_params$dist, dens = "KNN", k = distance_params$k, 
+        BPPARAM = distance_params$parallel)
+} else if (distance_params$dens == "GMM") {
+    distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+        distance_params$dim_reduction, distance_params$ndim, 
+        dist_mat = distance_params$dist, dens = "GMM", num_components = distance_params$num_components, 
+        r = distance_params$r, varapp = distance_params$varapp, 
+        epapp = distance_params$epapp, BPPARAM = distance_params$parallel)
+} else {
+    stop("Invalid density method specified")
+}
+Browse[2]> debug: distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+    distance_params$dim_reduction, distance_params$ndim, dist_mat = distance_params$dist, 
+    dens = "KNN", k = distance_params$k, BPPARAM = distance_params$parallel)
+Browse[2]> debug: save_time <- format(Sys.time(), "%Y-%m-%d-%H-%M-%S")
+Warning message:
+In distMat(reduction_df, distance_params$sample_id, distance_params$dim_reduction,  :
+  Some samples have numbers of cells smaller than the minimum cell number 500 to have reliable results!
+Browse[2]> debug: if (!dir.exists(here::here("results", "Processed_Datasets", dataset_name))) {
+    dir.create((here::here("results", "Processed_Datasets", dataset_name)))
+}
+Browse[2]> debug: if (!dir.exists(here::here("results", "Processed_Datasets", dataset_name, 
+    save_name))) {
+    dir.create((here::here("results", "Processed_Datasets", dataset_name, 
+        save_name)))
+}
+Browse[2]> debug: saveRDS(distance_matrix, here::here("results", "Processed_Datasets", 
+    dataset_name, save_name, paste(name_str, save_time, "_dist_mat.Rds", 
+        sep = "")))
+Browse[2]> debug: saveRDS(distance_params, here::here("results", "Processed_Datasets", 
+    dataset_name, save_name, paste(name_str, save_time, "_dist_params.Rds", 
+        sep = "")))
+Browse[2]> debug: dist_tibble <- dist_to_tibble(distance_matrix, dataset_name, 
+    program_name, distance_params)
+Browse[2]> debug: dist_tibble_list[[index]] <- dist_tibble
+Browse[2]> debug: saveRDS(dist_tibble, here::here("results", "Processed_Datasets", 
+    dataset_name, save_name, paste(name_str, save_time, "_dist_tibble.Rds", 
+        sep = "")))
+Browse[2]> > 
+> proc.time()
+    user   system  elapsed 
+3816.345 6292.103  502.090 

@@ -1,0 +1,64 @@
+
+R version 4.2.2 Patched (2022-11-10 r83330) -- "Innocent and Trusting"
+Copyright (C) 2022 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> source(here::here("Code","Analyze_Datasets","pelkaCRC_dists.R"))
+here() starts at /accounts/projects/epurdom/singlecell/pop_data
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+Loading required package: usethis
+ℹ Loading popPackage
+Called from: get_distances(program_vec, dist_params)
+Browse[1]> debug: if (distance_params$dens == "KNN") {
+    distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+        distance_params$dim_reduction, distance_params$ndim, 
+        dist_mat = distance_params$dist, dens = "KNN", k = distance_params$k, 
+        BPPARAM = distance_params$parallel)
+} else if (distance_params$dens == "GMM") {
+    distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+        distance_params$dim_reduction, distance_params$ndim, 
+        dist_mat = distance_params$dist, dens = "GMM", num_components = distance_params$num_components, 
+        r = distance_params$r, varapp = distance_params$varapp, 
+        epapp = distance_params$epapp, BPPARAM = distance_params$parallel)
+} else {
+    stop("Invalid density method specified")
+}
+Browse[2]> debug: if (distance_params$dens == "GMM") {
+    distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+        distance_params$dim_reduction, distance_params$ndim, 
+        dist_mat = distance_params$dist, dens = "GMM", num_components = distance_params$num_components, 
+        r = distance_params$r, varapp = distance_params$varapp, 
+        epapp = distance_params$epapp, BPPARAM = distance_params$parallel)
+} else {
+    stop("Invalid density method specified")
+}
+Browse[2]> debug: distance_matrix <- distMat(reduction_df, distance_params$sample_id, 
+    distance_params$dim_reduction, distance_params$ndim, dist_mat = distance_params$dist, 
+    dens = "GMM", num_components = distance_params$num_components, 
+    r = distance_params$r, varapp = distance_params$varapp, epapp = distance_params$epapp, 
+    BPPARAM = distance_params$parallel)
+Browse[2]> 

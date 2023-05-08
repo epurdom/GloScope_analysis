@@ -1,0 +1,205 @@
+---
+title: "Process Perez et al. (2022) Lupus PBMC Data"
+author: "Purdom Group"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE)
+options(error = quote(dump.frames("pelkaErrorDump", TRUE))) # error logging
+library(here)
+# For relative file paths, this document expects `pop_data` as root folder
+# `here::here()` should return "/accounts/projects/epurdom/singlecell/pop_data"
+
+library(SeuratDisk) # For interface with h5Seurat format
+source(here::here('Code','Process_Datasets','util_run_seurat_pipeline.R'))
+source(here::here('Code','Process_Datasets','util_format_metadata.R'))
+source(here::here('Code','Process_Datasets','util_get_cluster_proportions.R'))
+```
+
+# Set Up
+
+```{r init_program,warning=FALSE,echo=FALSE}
+# This notebook contains a template for processing a single-cell dataset into a Seurat object.
+
+# Make sure to the `dataset_name` string assigned below leads to a valid `./data/Processed_Datasets/{dataset_name}` folder.
+# The user must complete a processing program associated with this document which includes functions for creating a Seurat object from raw files and specification of processing choices.
+# A template for the processing program can be found at `./Code/Process_Datasets/Programs/program_TEMPLATE.R`.
+# The completed version should be saved at `./Code/Process_Datasets/Programs/program_{dataset_name}_{program_name}`.
+# Bellow the Boolean `check_initial_sce_save` determines whether to check for a "baseline" Seurat object containing the unmodified reads and metadata
+
+dataset_name <- "perezLupus" 
+program_name <- "default" 
+primary_assay <- "RNA" 
+check_initial_sce_save <- FALSE
+
+# Load processing program
+name_str <- paste0(dataset_name,"_",program_name)
+program_filepath <- here::here("Code","Process_Datasets","Programs",paste0(name_str,".R"))
+if(!file.exists(program_filepath)) { stop("No file provided for processing program") }
+source(program_filepath)
+
+# If a baseline Seurat object is created, it can be saved in a number of formats
+# These include an `.Rds` file with the Seurat object, a `.Rds` file with a list form, an `.h5Seurat` object, and `SingleCellExperiment`
+# The list and SCE formats are for use outside this pipeline and cannot be loaded in for reanalysis
+formats_to_save = list("sce") # All options 
+
+sce_object <- NULL
+initial_sce_save_path <- here::here("data","Processed_Datasets",dataset_name,name_str,"initial_sce")
+
+initial_sce_save_found <- FALSE # For printing in text
+rds_save_used <- TRUE # For printing in text
+# Rds appears to give faster load times than h5Seurat, so we check that format first.
+if (check_initial_sce_save && file.exists(paste0(initial_sce_save_path,".Rds"))) {
+	sce_object <- readRDS(paste0(initial_sce_save_path,".Rds"))
+	initial_sce_save_found <- TRUE
+} 
+
+if (is.null(sce_object)){ # Will still be NULL if saved data has not been loaded
+	sce_object <- build_seurat_object(dataset_name,program_name,primary_assay,save_formats=formats_to_save)
+}
+
+```
+
+This notebook details the processing of the '`r dataset_name`' dataset through the '`r program_name`' processing program. The primary assay is `r primary_assay`.
+The processing program which contains functions for generating a Seurat object from raw files and processing that object can be found at `Code/Process_Datasets/Programs/`r name_str`.R`.
+
+
+`r if(!initial_sce_save_found){"An unmodified SCE object was computed de novo in this run."}`
+`r if(!initial_sce_save_found){paste0("It was saved in the following formats at Code/Process_Datasets/",dataset_name,"/",name_str,": ",toString(formats_to_save),".")}`
+
+`r if(initial_sce_save_found && rds_save_used){paste0("A previously computed and unmodified SCE object was loaded from Code/Process_Datasets/",dataset_name,"/",name_str,"/initial_sce.Rds.")}`
+
+
+
+# Process Data
+
+## Process Metadata
+
+```{r process_metadata}
+# There are two steps to process the metadata of the baseline Seurat object. Metadata is expected at the cellular level
+# First, any custom metadata manipulation, such as combining two covariates into one, is performed
+# Second, core covariates are mapped to a consistent name and variable class across all datasets
+# The core covariates are: patient, group (phenotype), sample, cell_type, batch, num_genes, and num_reads
+# It is the responsibility of the user to manually match names in the metadata data.frame to the standardized core covariate names
+
+patient_str <- "donor_uuid" # The string of the patient ID covariate
+group_str <- "disease_state" # The group (phenotype/condition) covariate
+sample_str <- "final_sample" # The sample ID within a patient
+cell_type_str <- "cell_type" # The cell type covariate
+batch_str <- "Processing_Cohort" # The covariate associated with any possible batch effect such as processing site or date
+num_features_str <- NULL # The covariate for the number of non-zero features in a given cell. `nFeature_RNA` is the Seurat default
+num_reads_str <- NULL # The covariate for the number of reads in a given cell. `nCount_RNA` is the Seurat default
+
+metadata_df <- readRDS(here::here("data","Processed_Datasets","perezLupus","raw_files","metadata_df.Rds"))
+metadata_formatted_df <- format_metadata_df(metadata_df,
+ 					 dataset=dataset_name,patient=patient_str, group=group_str,
+ 					 sample=sample_str,cell_type=cell_type_str,batch=batch_str,num_features=num_features_str,
+ 					 num_reads=num_reads_str,
+ 					 custom_steps=metadata_manipulation_fn)
+metadata_formatted <- S4Vectors::DataFrame(metadata_formatted_df) # convert from data.frame to DFrame
+sce_object@colData <- metadata_formatted # update object
+```
+
+
+```{r save_metadata,echo=FALSE}
+# save the meta.data standalone for access without loading a Seurat object
+saveRDS(metadata_formatted_df,file=here::here('data','Processed_Datasets',dataset_name,'metadata',paste0(name_str,"_metadata.Rds")))
+```
+
+```{r check_sample_bool,echo=FALSE}
+single_sample_bool <- get_patient_sample_cross(metadata_formatted_df)
+```
+
+`r paste0("There is ",ifelse(single_sample_bool,"","not "),"a single sample per patient.")`
+
+The following function was used for dataset-specific pre-processing:
+
+```{r print_meta_fn,echo=FALSE}
+metadata_manipulation_fn
+```
+
+## Pre-Processing Pipeline
+
+Before running the pre-processing pipeline there are `r dim(sce_object)[2]` cells and `r dim(sce_object)[1]` features in the dataset.
+
+The following table shows the mapping from dataset specific covariates to their core covariate names. A missing variable name iditcates that covariate is not present.
+
+| Core Covariate | Variable Name        |
+|----------------|----------------------|
+| Patient ID     | `r patient_str`      |
+| Group          | `r group_str`        |
+| Sample ID      | `r sample_str`       |
+| Cell Type      | `r cell_type_str`    |
+| Batch          | `r batch_str`        |
+| Num. Features  | `r num_features_str` |
+| Num. Reads     | `r num_reads_str`    |
+
+
+The standard Seurat processing pipeline is normalization, variable feature selection, scaling, PCA, UMAP, and nearest neighbor estimation to enable clustering.
+
+The following arguments are passed to each Seurat step, with NULL indicating an omitted step.
+
+```{r print_pipeline,echo=FALSE,warning=FALSE}
+seurat_params <- get_seurat_pipeline_params()
+seurat_params
+```
+
+The custom functions dovetailed into the processing pipeline are as follows:
+
+```{r dovetail_fns,echo=FALSE}
+custom_fns <- get_seurat_pipeline_custom_fns()
+custom_fns
+```
+
+```{r run_seurat,echo=FALSE}
+#If the final object should be save in `h5Seurat` format, set the `save_h5` Boolean to True.
+save_h5 <- FALSE
+
+# run Seurat pipeline
+pipeline_start <- proc.time()[3]
+sce_object <- run_seurat_pipeline(sce_object,seurat_params,custom_fns,is_sce=TRUE)
+pipeline_end <- proc.time()[3]
+pipeline_delta <- pipeline_end - pipeline_start
+saveRDS(sce_object, file=here::here("data","Processed_Datasets",dataset_name,name_str,paste0(name_str,".Rds")) )
+```
+
+After running the entire pipeline there are `r dim(sce_object)[2]` cells and `r dim(sce_object)[1]` features. It took `r pipeline_delta` seconds to run. 
+
+The final Seurat object is saved at `r paste0("Code/Process_Datasets/",dataset_name,"/",name_str,"/",name_str,ifelse(save_h5,",h5Seurat",".Rds"))`
+
+
+```{r get_props,echo=FALSE}
+# For comparsion, we generate proprtion vectors for observtional units. A common choice is the proption of cell types in each sample
+aggregation_variable <- "sample"
+subset_variable <- "cell_type"
+
+if (!is.null(aggregation_variable) && !is.null(subset_variable)){
+	proportion_df <- get_cluster_props(metadata_formatted_df, aggregation_variable,subset_variable) # The first covariate is the one to aggregate along, the second is the subsets (typically patients and cell types)
+	saveRDS(proportion_df,file=here::here('data',"Processed_Datasets",dataset_name,'metadata',paste0(name_str,"_proportions.Rds")))
+}
+```
+
+`r if (!is.null(aggregation_variable) && !is.null(subset_variable)) {paste0("For comparsion, we consider the proportion of ",subset_variable," in ",aggregation_variable," units. The first 5 units are shown.")}`
+`r if (!is.null(aggregation_variable) && !is.null(subset_variable)) {paste0("The full tibble is saved at ",paste0("Code/Process_Datasets/",dataset_name,"/metadata/",paste0(name_str,"_proportions.Rds")))}`
+
+
+```{r print_props,echo=FALSE}
+if (!is.null(aggregation_variable) && !is.null(subset_variable)){
+	print(proportion_df[1:5,])
+}
+```
+
+
+# Exploratory Visualization
+
+This functionality has been temporarily removed.
+
+# Documentation
+
+Session Info:
+```{r print_session_info}
+print(utils::sessionInfo())
+```
+

@@ -1,0 +1,52 @@
+
+R version 4.2.2 Patched (2022-11-10 r83330) -- "Innocent and Trusting"
+Copyright (C) 2022 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> source(here::here("Code","Analyze_Datasets","perezLupus_dists.R"))
+here() starts at /accounts/projects/epurdom/singlecell/pop_data
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+Loading required package: usethis
+ℹ Loading popPackage
+Warning messages:
+1: In distMat(reduction_df, distance_params$sample_id, distance_params$dim_reduction,  :
+  Some samples have numbers of cells smaller than the minimum cell number 500 to have reliable results!
+2: Using an external vector in selections was deprecated in tidyselect 1.1.0.
+ℹ Please use `all_of()` or `any_of()` instead.
+  # Was:
+  data %>% select(all_columns)
+
+  # Now:
+  data %>% select(all_of(all_columns))
+
+See <https://tidyselect.r-lib.org/reference/faq-external-vector.html>. 
+3: In distMat(reduction_df, distance_params$sample_id, distance_params$dim_reduction,  :
+  Some samples have numbers of cells smaller than the minimum cell number 500 to have reliable results!
+> 
+> proc.time()
+     user    system   elapsed 
+108454.31  38722.13  99029.99 

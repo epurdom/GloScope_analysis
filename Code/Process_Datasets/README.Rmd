@@ -1,0 +1,29 @@
+---
+title: "README for Processing Data Sets"
+author: "William Torous"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+This file outlines processing data sets into `Seurat` objects for use in the `popPackage`.
+
+Each data set should be identified by a consistent string which does not contain underscores. For instance the Arnon melanoma data is denoted `arnon` and the COVID PBMC data is `covid143`.
+Each dataset must have an associate processing program in `Code/Process_Data/programs/dataSetName_programName.R`. This file will contain the seurat steps as well as any additional pre- and post-processing; for these, consistent function names should match the details below. It is natural to run multiple versions of pre-processing and post-processing steps. Each variation should its own unique `programName` and an associated `.R` file. At present, it is also necessary to specify the enitre pipeline in each file e.g. information is not shared between programs for the same data set. A default `seurat` pipeline can be loaded from `data/processed_data/default_seurat.Rds`.
+
+For each data set and program, the `.Rmd` template `Code/Process_Data/process_data_template.Rmd` should be edited. It is crucial that the `dataSetName` and `programName` variables are set appropriately. Additionally, the output HTML files should be placed in the following folder structure: `results/Processed_Datsetrs/{dataSetName}/{dataSetName_programName}/process_{dataSetName_programName.R}.html`. This folder structure is NOT generated automatically, so you must make sure to create it before running the pipeline. The save location after rendering is set in the `{dataSetName_programName}_default_run.R` file using the `output_file` argument.
+
+## Data Program Function Name Format
+
+`load_data(check_save=F)` contains the details for transforming raw data files into either seperate objects for counts and reads, or a single hdf5. This function will be unique to each data set. Returns a list with the `structure` slot indicating what `seurat` call to use to create an object.
+
+`get_seurat_params()` returns a list of the seurat parameters to use in the default pipeline
+
+If the next two funcitons are not required, they should be set to `NULL` variables in the pipeline program.
+
+`seurat_preprocess()` performs the custom pre-processing steps for a data set if desired. It maps a seurat object to a seurat object. This is run immediately after initializing a seurat object and could contain, for instance, QC filtering.
+
+`seurat_postprocess()` takes the same form as `seurat_preprocess()` but is run after dimensionality reduction and basic visualizations. This could include other reduction schemes or clustering. 
+
+### TODO
+
+A global default and data set specific visualization module. This may be more appropriate for a different `.Rmd` than processing.
