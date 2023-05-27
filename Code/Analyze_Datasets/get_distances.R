@@ -45,19 +45,19 @@ get_distances <- function(program_vec,dist_list,sce=FALSE){
 		save_name <- paste0(dataset_name,"_",ifelse(endsWith(program_name,".scvi"),gsub('.{5}$', '', program_name),program_name))
 
 		distance_params <- dist_list[[index]] # load distance parameters
-		# the `distMat` functions expects a data.frame input extracted from a Seurat object
+		# the `gloscope` functions expects a data.frame input extracted from a Seurat object
 		reduction_df <- seurat_to_df(dataset_name,program_name,save_name,distance_params$dim_reduction,sce=sce)
 		# compute the distance matrix for a given experiment
 		set.seed(2)
-		browser()
+		start_time <- proc.time()[3]
 		if (distance_params$dens == "KNN"){
-			distance_matrix <- distMat(reduction_df,distance_params$sample_id,
+			distance_matrix <- gloscope(reduction_df,distance_params$sample_id,
 				distance_params$dim_reduction, distance_params$ndim,
 				dist_mat = distance_params$dist, dens = "KNN",
 				k=distance_params$k,
 				BPPARAM=distance_params$parallel)
 		} else if (distance_params$dens == "GMM"){
-			distance_matrix <- distMat(reduction_df,distance_params$sample_id,
+			distance_matrix <- gloscope(reduction_df,distance_params$sample_id,
 				distance_params$dim_reduction, distance_params$ndim,
 				dist_mat = distance_params$dist, dens="GMM",
 				num_components = distance_params$num_components, r = distance_params$r,
@@ -66,7 +66,9 @@ get_distances <- function(program_vec,dist_list,sce=FALSE){
 		} else {
 			stop("Invalid density method specified")
 		}
-
+		end_time <- proc.time()[3]
+		delta_time <- end_time - start_time
+		print(paste0("Runtime for ", distance_params$dens," and ",distance_params$dim_reduction," was ", delta_time))
 		# Save distance matrix and parameters
 		save_time <- format(Sys.time(), '%Y-%m-%d-%H-%M-%S')
 		if (!dir.exists(here::here("results","Processed_Datasets",dataset_name))){ dir.create((here::here("results","Processed_Datasets",dataset_name))) }

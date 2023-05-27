@@ -3,7 +3,7 @@ library(BiocParallel)
 source(here::here("Code","Analyze_Datasets","get_distances.R"))
 
 program_vec <- rep("arnonMelanoma_default",8)
-parallel_params <- BiocParallel::bpparam()
+parallel_params <- BiocParallel::SerialParam(RNGseed=2)
 dist_params <- list(
 	list(dim_reduction="PC",sample_id="sample",ndim=10,dist="KL",
 		dens="GMM",r=10000,parallel=parallel_params,
