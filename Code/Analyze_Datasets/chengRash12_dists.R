@@ -3,7 +3,7 @@ library(BiocParallel)
 source(here::here("Code","Analyze_Datasets","get_distances.R"))
 
 program_vec <- rep("chengRash12_default",4)
-parallel_params <- BiocParallel::MulticoreParam(RNGseed=2)  
+parallel_params <- BiocParallel::SerialParam(RNGseed=2)  
 
 dist_params <- list(
 	list(dim_reduction="PC",sample_id="sample",ndim=10,dist="KL",

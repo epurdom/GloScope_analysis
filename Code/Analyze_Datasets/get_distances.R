@@ -3,6 +3,7 @@ library(tibble)
 library(tidyr)
 library(dplyr)
 library(devtools)
+library(stringr)
 devtools::load_all(here::here("..","popPackage"))
 
 calc_dens = function(df_list, dens = "GMM", k = 50, num_components = c(1:9),
@@ -47,21 +48,21 @@ get_distances <- function(program_vec,dist_list,sce=FALSE){
 		distance_params <- dist_list[[index]] # load distance parameters
 		# the `gloscope` functions expects a data.frame input extracted from a Seurat object
 		reduction_df <- seurat_to_df(dataset_name,program_name,save_name,distance_params$dim_reduction,sce=sce)
+		embedding_matrix <- reduction_df[,stringr::str_detect(colnames(reduction_df),distance_params$dim_reduction)]
+		embedding_matrix <- embedding_matrix[,1:distance_params$ndim]
+		cell_sample_ids <- reduction_df$sample
 		# compute the distance matrix for a given experiment
 		set.seed(2)
 		start_time <- proc.time()[3]
 		if (distance_params$dens == "KNN"){
-			distance_matrix <- gloscope(reduction_df,distance_params$sample_id,
-				distance_params$dim_reduction, distance_params$ndim,
-				dist_mat = distance_params$dist, dens = "KNN",
-				k=distance_params$k,
-				BPPARAM=distance_params$parallel)
+			distance_matrix <- gloscope(embedding_matrix, cell_sample_ids,
+				dens = "KNN", dist_mat = distance_params$dist,
+				k = distance_params$k, BPPARAM=distance_params$parallel)
 		} else if (distance_params$dens == "GMM"){
-			distance_matrix <- gloscope(reduction_df,distance_params$sample_id,
-				distance_params$dim_reduction, distance_params$ndim,
-				dist_mat = distance_params$dist, dens="GMM",
-				num_components = distance_params$num_components, r = distance_params$r,
-				varapp=distance_params$varapp,epapp=distance_params$epapp,
+			browser()
+			distance_matrix <- gloscope(embedding_matrix, cell_sample_ids,
+				dens = "GMM", dist_mat = distance_params$dist,
+				r = distance_params$r, num_components = distance_params$num_components,
 				BPPARAM=distance_params$parallel)
 		} else {
 			stop("Invalid density method specified")
