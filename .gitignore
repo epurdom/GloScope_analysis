@@ -9,6 +9,7 @@ data
 *.pdf
 *.RData
 *.out
+Code/Analyze_Datasets/*.out
 *.icloud
 *.Rhistory
 results
