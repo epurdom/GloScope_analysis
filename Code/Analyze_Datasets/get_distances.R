@@ -59,7 +59,6 @@ get_distances <- function(program_vec,dist_list,sce=FALSE){
 				dens = "KNN", dist_mat = distance_params$dist,
 				k = distance_params$k, BPPARAM=distance_params$parallel)
 		} else if (distance_params$dens == "GMM"){
-			browser()
 			distance_matrix <- gloscope(embedding_matrix, cell_sample_ids,
 				dens = "GMM", dist_mat = distance_params$dist,
 				r = distance_params$r, num_components = distance_params$num_components,
