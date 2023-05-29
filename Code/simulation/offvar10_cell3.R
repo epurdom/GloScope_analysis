@@ -54,13 +54,13 @@ plot_df = cbind(sim@meta.data, sim@reductions$pca@cell.embeddings)
 
 set.seed(1)
 
-dist_mat_GMM_pca = distMat(x = plot_df, sample_id = "sample_id", dim_redu = "PC", ndim = 10, dens = "GMM",
+dist_mat_GMM_pca = gloscope(x = plot_df, sample_id = "sample_id", dim_redu = "PC", ndim = 10, dens = "GMM",
                            BPPARAM = BiocParallel::MulticoreParam(2,RNGseed = 1), dist_mat = "KL", varapp = FALSE,
                            returndens = FALSE, epapp = FALSE)
 
 set.seed(1)
 
-dist_mat_KNN_pca = distMat(x = plot_df, sample_id = "sample_id", dim_redu = "PC", ndim = 10, dens = "KNN",
+dist_mat_KNN_pca = gloscope(x = plot_df, sample_id = "sample_id", dim_redu = "PC", ndim = 10, dens = "KNN",
                             BPPARAM = BiocParallel::MulticoreParam(2,RNGseed = 1), dist_mat = "KL", varapp = FALSE,
                             returndens = FALSE, epapp = FALSE)
 
