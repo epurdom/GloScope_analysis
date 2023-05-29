@@ -23,11 +23,11 @@ cluster_function = function(cluster_table){
   clusprop = matrix(cluster_table, ncol = ncol(cluster_table), dimnames = dimnames(cluster_table))
   clusprop[which(clusprop==0)] <- 0.5
   clusprop <- t(apply(clusprop, 1, function(x) x/sum(x)))
-  
+
   sample_names <- rownames(clusprop)
   all_combn <- t(combn(sample_names, 2))
   dist_vec <- c()
-  
+
   for (i in 1:nrow(all_combn)){
     s1 <- all_combn[i, 1]
     s2 <- all_combn[i, 2]
@@ -35,20 +35,20 @@ cluster_function = function(cluster_table){
       clus_KL(prop1 = clusprop[s2,], prop2 = clusprop[s1,])
     dist_vec <- c(dist_vec, KL)
   }
-  
-  
+
+
   clusprop_diss <- matrix(0, ncol = length(sample_names), nrow = length(sample_names))
-  
+
   rownames(clusprop_diss) <- sample_names
   colnames(clusprop_diss) <-  sample_names
-  
+
   for (i in 1:nrow(all_combn)){
     clusprop_diss[all_combn[i, 1], all_combn[i, 2]] <- dist_vec[i]
     clusprop_diss[all_combn[i, 2], all_combn[i, 1]] <- dist_vec[i]
   }
-  
+
   return(clusprop_diss)
-  
+
 }
 
 
@@ -121,7 +121,7 @@ sim[["scvi"]] <- CreateDimReducObject(embeddings = latent_batch, key = "scvi_", 
 
 sim = sim %>%
   FindNeighbors(reduction = "scvi", verbose = T) %>%
-  FindClusters(verbose = T) 
+  FindClusters(verbose = T)
 mytable_est_scvi = table(sim$sample_id, sim$seurat_clusters)
 
 
@@ -129,26 +129,26 @@ plot_df = cbind(sim@meta.data, sim@reductions$pca@cell.embeddings, latent_batch)
 
 set.seed(1)
 
-dist_mat_GMM_pca = distMat(x = plot_df, sample_id = "sample_id", dim_redu = "PC", ndim = 10, dens = "GMM",
+dist_mat_GMM_pca = gloscope(x = plot_df, sample_id = "sample_id", dim_redu = "PC", ndim = 10, dens = "GMM",
                            BPPARAM = BiocParallel::MulticoreParam(2,RNGseed = 1), dist_mat = "KL", varapp = FALSE,
                            returndens = FALSE, epapp = FALSE)
 
 set.seed(1)
 
-dist_mat_KNN_pca = distMat(x = plot_df, sample_id = "sample_id", dim_redu = "PC", ndim = 10, dens = "KNN",
+dist_mat_KNN_pca = gloscope(x = plot_df, sample_id = "sample_id", dim_redu = "PC", ndim = 10, dens = "KNN",
                             BPPARAM = BiocParallel::MulticoreParam(2,RNGseed = 1), dist_mat = "KL", varapp = FALSE,
                             returndens = FALSE, epapp = FALSE)
 
 
 set.seed(1)
-dist_mat_GMM_scvi= distMat(x = plot_df, sample_id = "sample_id", dim_redu = "scvi", ndim = 10, dens = "GMM",
+dist_mat_GMM_scvi= gloscope(x = plot_df, sample_id = "sample_id", dim_redu = "scvi", ndim = 10, dens = "GMM",
                            BPPARAM = BiocParallel::MulticoreParam(2,RNGseed = 1), dist_mat = "KL", varapp = FALSE,
                            returndens = FALSE, epapp = FALSE)
 
 
 set.seed(1)
 
-dist_mat_KNN_scvi = distMat(x = plot_df, sample_id = "sample_id", dim_redu = "scvi", ndim = 10, dens = "KNN",
+dist_mat_KNN_scvi = gloscope(x = plot_df, sample_id = "sample_id", dim_redu = "scvi", ndim = 10, dens = "KNN",
                             BPPARAM = BiocParallel::MulticoreParam(2,RNGseed = 1), dist_mat = "KL", varapp = FALSE,
                             returndens = FALSE, epapp = FALSE)
 
@@ -156,10 +156,10 @@ clus_true = cluster_function(mytable_true)
 clus_seurat_pca = cluster_function(mytable_est_pca)
 clus_seurat_scvi = cluster_function(mytable_est_scvi)
 
-save(clus_true,clus_seurat_pca, clus_seurat_scvi, 
+save(clus_true,clus_seurat_pca, clus_seurat_scvi,
      file =  paste0("../../results/simulation/distmat/clusprop_V3/Setting1/25_75/cluster/",slurm_arrayid ,".Rda" ))
 
 save(dist_mat_KNN_pca,dist_mat_GMM_pca,
-  dist_mat_KNN_scvi,dist_mat_GMM_scvi, 
+  dist_mat_KNN_scvi,dist_mat_GMM_scvi,
     file = paste0("../../results/simulation/distmat/clusprop_V3/Setting1/25_75/Glos/",slurm_arrayid,".Rda"))
 

@@ -1,5 +1,4 @@
-slurm_arrayid <- Sys.getenv('SLURM_ARRAY_TASK_ID')
-print(slurm_arrayid)
+slurm_arrayid <- 1
 
 source("muscat_sim_serials.R")
 #source("True_KLv2.R")
