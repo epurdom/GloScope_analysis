@@ -48,19 +48,21 @@ sim  = sim %>%
   RunPCA(verbose = T)
 
 
-plot_df = cbind(sim@meta.data, sim@reductions$pca@cell.embeddings)
+#plot_df = cbind(sim@meta.data, sim@reductions$pca@cell.embeddings)
+
+
+embedding_pca <- sim@reductions$pca@cell.embeddings[,1:10]
+sample_ids <- sim@meta.data$sample_id
+set.seed(1)
+
+dist_mat_GMM_pca = gloscope(embedding_pca, sample_ids, dens = "GMM",
+                            BPPARAM = BiocParallel::MulticoreParam(2,RNGseed = 1), dist_mat = "KL")
 
 set.seed(1)
 
-dist_mat_GMM_pca = gloscope(x = plot_df, sample_id = "sample_id", dim_redu = "PC", ndim = 10, dens = "GMM",
-                           BPPARAM = BiocParallel::MulticoreParam(2,RNGseed = 1), dist_mat = "KL", varapp = FALSE,
-                           returndens = FALSE, epapp = FALSE)
+dist_mat_KNN_pca = gloscope(embedding_pca, sample_ids, dens = "KNN",
+                           BPPARAM = BiocParallel::MulticoreParam(2,RNGseed = 1), dist_mat = "KL")
 
-set.seed(1)
-
-dist_mat_KNN_pca = gloscope(x = plot_df, sample_id = "sample_id", dim_redu = "PC", ndim = 10, dens = "KNN",
-                            BPPARAM = BiocParallel::MulticoreParam(2,RNGseed = 1), dist_mat = "KL", varapp = FALSE,
-                            returndens = FALSE, epapp = FALSE)
 
 
 
