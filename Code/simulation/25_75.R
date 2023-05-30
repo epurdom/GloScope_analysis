@@ -136,18 +136,18 @@ dist_mat_GMM_pca = gloscope(embedding_pca, sample_ids, dens = "GMM",
 
 set.seed(1)
 
-dist_mat_KNN_pca = distMat(embedding_pca, sample_ids, dens = "KNN",
+dist_mat_KNN_pca = gloscope(embedding_pca, sample_ids, dens = "KNN",
                            BPPARAM = BiocParallel::MulticoreParam(2,RNGseed = 1), dist_mat = "KL")
 
 
 set.seed(1)
-dist_mat_GMM_scvi= distMat(latent_batch, sample_ids, dens = "GMM",
+dist_mat_GMM_scvi= gloscope(latent_batch, sample_ids, dens = "GMM",
                            BPPARAM = BiocParallel::MulticoreParam(2,RNGseed = 1), dist_mat = "KL")
 
 
 set.seed(1)
 
-dist_mat_KNN_scvi = distMat(latent_batch, sample_ids, dens = "KNN",
+dist_mat_KNN_scvi = gloscope(latent_batch, sample_ids, dens = "KNN",
                             BPPARAM = BiocParallel::MulticoreParam(2,RNGseed = 1), dist_mat = "KL")
 
 clus_true = cluster_function(mytable_true)
