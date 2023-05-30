@@ -67,6 +67,5 @@ dist_mat_KNN_pca = gloscope(x = plot_df, sample_id = "sample_id", dim_redu = "PC
 
 
 save(dist_mat_KNN_pca,dist_mat_GMM_pca,
-  dist_mat_KNN_scvi,dist_mat_GMM_scvi,
     file = paste0("../../results/simulation/distmat/parameter/mores/s20_lfc015/",slurm_arrayid,".Rda"))
 
