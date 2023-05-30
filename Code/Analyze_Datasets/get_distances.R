@@ -52,7 +52,6 @@ get_distances <- function(program_vec,dist_list,sce=FALSE){
 		embedding_matrix <- embedding_matrix[,1:distance_params$ndim]
 		cell_sample_ids <- reduction_df$sample
 		# compute the distance matrix for a given experiment
-		set.seed(2)
 		start_time <- proc.time()[3]
 		if (distance_params$dens == "KNN"){
 			distance_matrix <- gloscope(embedding_matrix, cell_sample_ids,
