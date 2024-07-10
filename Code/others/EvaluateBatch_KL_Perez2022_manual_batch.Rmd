@@ -1,0 +1,1092 @@
+---
+title: "EvaluateBatch_original"
+output: 
+    html_document:
+        toc: true
+        toc_float: true
+        toc_collapsed: true
+        toc_depth: 3
+        number_sections: true
+        theme: cerulean
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE, message = FALSE, warning = FALSE
+)
+library(dplyr)
+library(ggplot2)
+library(vegan)
+safe_colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77",
+                             "#117733", "#332288", "#AA4499", 
+                             "#44AA99", "#999933", "#882255",
+                             "#661100", "#6699CC", "#888888")
+colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", 
+                       "#F0E442", "#0072B2", "#D55E00", "#CC79A7")  
+```
+
+```{r}
+load("../../results/BatchStudy/dist_mat_Perez2022_GMM.Rda")
+load("../../results/BatchStudy/dist_mat_Perez2022_GMM_sample.Rda")
+load("../../results/BatchStudy/dist_mat_Perez2022_GMM_scvi.Rda")
+load("../../results/Perez2022/plot_df_batchupdate.Rda")
+load("../../results/BatchStudy/dist_mat_Perez2022_KNN.Rda")
+load("../../results/BatchStudy/Perez2022_batch_manual_dist.Rda")
+plot_df$batch_id <- paste0(plot_df$sample_uuid, plot_df$Processing_Cohort)
+meta <- unique(plot_df[, c("batch_id", "Processing_Cohort", "disease_state", "disease")])
+rm(plot_df)
+
+load("../../results/BatchStudy/Perez2022_subgroup_meta.Rda")
+
+
+```
+
+
+
+
+
+```{r}
+O2 <- function(PERMANOVA){
+  sumsq <- PERMANOVA$SumOfSqs
+  n <- PERMANOVA$Df
+  o2 <- (sumsq[1]-n[1]*(sumsq[2]/n[2]))/(sumsq[3] + sumsq[2]/n[2])
+  return(o2)
+}
+
+
+
+```
+
+# on new batch
+## PCA,GMM
+
+```{r}
+#anosim(dist_mat_GMM_PCA,meta$Site)
+PCA_ANS_batch <- anosim(dist_mat_GMM_PCA, meta$subgroup)
+PCA_ANS_Status <- anosim(dist_mat_GMM_PCA, meta$disease_state)
+
+#anosim(res, meta_sub$Status)
+PCA_ANO_batch <- adonis2(dist_mat_GMM_PCA ~meta$subgroup)
+PCA_ANO_Status <- adonis2(dist_mat_GMM_PCA ~meta$disease_state)
+
+O2_PCA = O2(PCA_ANO_batch)
+O2_PCA_status = O2(PCA_ANO_Status)
+
+```
+
+
+```{r}
+
+Har_sam_ANS_batch <- anosim(dist_mat_GMM_har_sample, meta$subgroup)
+Har_sam_ANS_Status <- anosim(dist_mat_GMM_har_sample, meta$disease_state)
+
+#anosim(res, meta_sub$Status)
+Har_sam_ANO <- adonis2(dist_mat_GMM_har_sample ~meta$subgroup)
+Har_sam_ANO_Status <- adonis2(dist_mat_GMM_har_sample~meta$disease_state)
+
+O2_Har_sam = O2(Har_sam_ANO)
+O2_Har_sam_status = O2(Har_sam_ANO_Status)
+
+```
+
+```{r}
+
+Har_cohort_ANS_batch <- anosim(dist_mat_GMM_har_batch, meta$subgroup)
+Har_cohort_ANS_Status <- anosim(dist_mat_GMM_har_batch, meta$disease_state)
+
+#anosim(res, meta_sub$Status)
+Har_cohort_ANO <- adonis2(dist_mat_GMM_har_batch ~meta$subgroup)
+Har_cohort_ANO_Status <- adonis2(dist_mat_GMM_har_batch ~meta$disease_state)
+
+O2_Har_cohort = O2(Har_cohort_ANO)
+O2_Har_cohort_status = O2(Har_cohort_ANO_Status)
+
+```
+
+
+
+
+
+
+
+
+
+## ScVI, GMM
+
+```{r}
+#anosim(dist_mat_GMM_PCA,meta$Site)
+scvi_ANS_batch <- anosim(dist_mat_GMM_scvi, meta$subgroup)
+scvi_ANS_Status <- anosim(dist_mat_GMM_scvi, meta$disease_state)
+
+#anosim(res, meta_sub$Status)
+scvi_ANO_batch <- adonis2(dist_mat_GMM_scvi ~meta$subgroup)
+scvi_ANO_Status <- adonis2(dist_mat_GMM_scvi ~meta$disease_state)
+
+O2_scvi = O2(scvi_ANO_batch)
+O2_scvi_status = O2(scvi_ANO_Status)
+
+```
+
+
+```{r}
+
+scvi_sam_ANS_batch <- anosim(dist_mat_GMM_scvi_sample, meta$subgroup)
+scvi_sam_ANS_Status <- anosim(dist_mat_GMM_scvi_sample, meta$disease_state)
+
+#anosim(res, meta_sub$Status)
+scvi_sam_ANO <- adonis2(dist_mat_GMM_scvi_sample ~meta$subgroup)
+scvi_sam_ANO_Status <- adonis2(dist_mat_GMM_scvi_sample~meta$disease_state)
+
+O2_scvi_sam = O2(scvi_sam_ANO)
+O2_scvi_sam_status = O2(scvi_sam_ANO_Status)
+
+
+```
+
+```{r}
+
+scvi_cohort_ANS_batch <- anosim(dist_mat_GMM_scvi_batch, meta$subgroup)
+scvi_cohort_ANS_Status <- anosim(dist_mat_GMM_scvi_batch, meta$disease_state)
+
+#anosim(res, meta_sub$Status)
+scvi_cohort_ANO <- adonis2(dist_mat_GMM_scvi_batch ~meta$subgroup)
+scvi_cohort_ANO_Status <- adonis2(dist_mat_GMM_scvi_batch ~meta$disease_state)
+
+O2_scvi_cohort = O2(scvi_cohort_ANO)
+O2_scvi_cohort_status = O2(scvi_cohort_ANO_Status)
+
+```
+
+
+## PCA, KNN
+
+```{r}
+#anosim(dist_mat_GMM_PCA,meta$Site)
+PCA_ANS_batch_KNN <- anosim(dist_mat_KNN_PCA, meta$subgroup)
+PCA_ANS_Status_KNN <- anosim(dist_mat_KNN_PCA, meta$disease_state)
+
+#anosim(res, meta_sub$Status)
+PCA_ANO_batch_KNN <- adonis2(dist_mat_KNN_PCA ~meta$subgroup)
+PCA_ANO_Status_KNN <- adonis2(dist_mat_KNN_PCA ~meta$disease_state)
+
+O2_PCA_KNN = O2(PCA_ANO_batch_KNN)
+O2_PCA_status_KNN = O2(PCA_ANO_Status_KNN)
+
+```
+
+
+```{r}
+
+Har_sam_ANS_batch_KNN <- anosim(dist_mat_KNN_har_sample, meta$subgroup)
+Har_sam_ANS_Status_KNN <- anosim(dist_mat_KNN_har_sample, meta$disease_state)
+
+#anosim(res, meta_sub$Status)
+Har_sam_ANO_KNN <- adonis2(dist_mat_KNN_har_sample ~meta$subgroup)
+Har_sam_ANO_Status_KNN <- adonis2(dist_mat_KNN_har_sample~meta$disease_state)
+
+O2_Har_sam_KNN = O2(Har_sam_ANO_KNN)
+O2_Har_sam_status_KNN = O2(Har_sam_ANO_Status_KNN)
+
+
+```
+
+```{r}
+
+Har_cohort_ANS_batch_KNN <- anosim(dist_mat_KNN_har_batch, meta$subgroup)
+Har_cohort_ANS_Status_KNN <- anosim(dist_mat_KNN_har_batch, meta$disease_state)
+
+#anosim(res, meta_sub$Status)
+Har_cohort_ANO_KNN <- adonis2(dist_mat_KNN_har_batch ~meta$subgroup)
+Har_cohort_ANO_Status_KNN <- adonis2(dist_mat_KNN_har_batch ~meta$disease_state)
+
+O2_Har_cohort_KNN = O2(Har_cohort_ANO_KNN)
+O2_Har_cohort_status_KNN = O2(Har_cohort_ANO_Status_KNN)
+
+```
+
+
+
+
+
+
+
+
+
+
+## ScVI, KNN
+
+```{r}
+#anosim(dist_mat_GMM_PCA,meta$Site)
+scvi_ANS_batch_KNN <- anosim(dist_mat_KNN_scvi, meta$subgroup)
+scvi_ANS_Status_KNN <- anosim(dist_mat_KNN_scvi, meta$disease_state)
+
+#anosim(res, meta_sub$Status)
+scvi_ANO_batch_KNN <- adonis2(dist_mat_KNN_scvi ~meta$subgroup)
+scvi_ANO_Status_KNN <- adonis2(dist_mat_KNN_scvi ~meta$disease_state)
+
+O2_scvi_KNN = O2(scvi_ANO_batch_KNN)
+O2_scvi_status_KNN = O2(scvi_ANO_Status_KNN)
+
+
+```
+
+
+```{r}
+
+scvi_sam_ANS_batch_KNN <- anosim(dist_mat_KNN_scvi_sample, meta$subgroup)
+scvi_sam_ANS_Status_KNN <- anosim(dist_mat_KNN_scvi_sample, meta$disease_state)
+
+#anosim(res, meta_sub$Status)
+scvi_sam_ANO_KNN <- adonis2(dist_mat_KNN_scvi_sample ~meta$subgroup)
+scvi_sam_ANO_Status_KNN <- adonis2(dist_mat_KNN_scvi_sample~meta$disease_state)
+
+O2_scvi_sam_KNN = O2(scvi_sam_ANO_KNN)
+O2_scvi_sam_status_KNN = O2(scvi_sam_ANO_Status_KNN)
+
+```
+
+```{r}
+
+scvi_cohort_ANS_batch_KNN <- anosim(dist_mat_KNN_scvi_batch, meta$subgroup)
+scvi_cohort_ANS_Status_KNN <- anosim(dist_mat_KNN_scvi_batch, meta$disease_state)
+
+#anosim(res, meta_sub$Status)
+scvi_cohort_ANO_KNN <- adonis2(dist_mat_KNN_scvi_batch ~meta$subgroup)
+scvi_cohort_ANO_Status_KNN <- adonis2(dist_mat_KNN_scvi_batch ~meta$disease_state)
+
+O2_scvi_cohort_KNN = O2(scvi_cohort_ANO_KNN)
+O2_scvi_cohort_status_KNN = O2(scvi_cohort_ANO_Status_KNN)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+## summary
+
+```{r}
+load("../../results/BatchStudy/Perez2022_stat.Rda")
+old_r = R_data
+old_o2 = O2_data
+
+ggplot(old_o2, aes(x = DimReduc, y = Value, group = comb))+
+  geom_point(aes(col = Correction))+
+  geom_line(aes(linetype  = Dens, col = Correction)) +
+    scale_color_manual(values= safe_colorblind_palette)+
+  theme_bw() +
+  facet_wrap(~Group)+
+  ylab("O2 Value")+
+        theme(axis.text.x = element_text(angle = 30, hjust=1))+
+  ggtitle("SLE Lupus data")
+
+ggplot(old_r, aes(x = DimReduc, y = Value, group = comb))+
+  geom_point(aes(col = Correction))+
+  geom_line(aes(linetype  = Dens, col = Correction)) +
+    scale_color_manual(values= safe_colorblind_palette)+
+  theme_bw() +
+  facet_wrap(~Group)+
+  ylab("R Value")+
+        theme(axis.text.x = element_text(angle = 30, hjust=1))+
+  ggtitle("SLE Lupus data")
+```
+
+
+```{r}
+O2_data <- data.frame(DimReduc = rep(c("Original", "Correct, Sample", "Correct, Batch"), each = 8),
+                      Group = rep(rep(c("Batch","Condition"),4),3),
+                      Dens = rep(c(rep("GMM", 4), rep("KNN",4)),3),
+                      Correction = rep(rep(c("PCA", "PCA", "ScVI", "ScVI"),2),3),
+                      Value = c(O2_PCA, O2_PCA_status,O2_scvi, O2_scvi_status,O2_PCA_KNN, O2_PCA_status_KNN, O2_scvi_KNN, O2_scvi_status_KNN,
+                                O2_Har_sam, O2_Har_sam_status,O2_scvi_sam, O2_scvi_sam_status,O2_Har_sam_KNN, O2_Har_sam_status_KNN,O2_scvi_sam_KNN, O2_scvi_sam_status_KNN,
+                                O2_Har_cohort, O2_Har_cohort_status,O2_scvi_cohort, O2_scvi_cohort_status,O2_Har_cohort_KNN, O2_Har_cohort_status_KNN,O2_scvi_cohort_KNN, O2_scvi_cohort_status_KNN))
+O2_data$DimReduc = factor(O2_data$DimReduc, levels = c("Original", "Correct, Sample", "Correct, Batch"))
+O2_data$comb = paste0(O2_data$Correction, "_", O2_data$Dens)
+
+ggplot(O2_data, aes(x = DimReduc, y = Value, group = Group))+
+  geom_point(aes(col = Group))+
+  geom_line(aes(col = Group)) +
+  theme_bw() +
+  facet_wrap(Dens~Correction)+
+  ylab("O2 Value")
+ggplot(O2_data, aes(x = DimReduc, y = Value, group = comb))+
+  geom_point(aes(col = Correction))+
+  geom_line(aes(linetype  = Dens, col = Correction)) +
+    scale_color_manual(values= safe_colorblind_palette)+
+  theme_bw() +
+  facet_wrap(~Group)+
+  ylab("O2 Value")+
+        theme(axis.text.x = element_text(angle = 30, hjust=1))+
+  ggtitle("SLE Lupus data")
+```
+
+
+```{r}
+R_data <- data.frame(DimReduc = rep(c("Original", "Correct, Sample", "Correct, Batch"), each = 8),
+                      Group = rep(rep(c("Batch","Condition"),4),3),
+                      Dens = rep(c(rep("GMM", 4), rep("KNN",4)),3),
+                      Correction = rep(rep(c("PCA", "PCA", "ScVI", "ScVI"),2),3),
+                      Value = c(PCA_ANS_batch$statistic, PCA_ANS_Status$statistic,scvi_ANS_batch$statistic, scvi_ANS_Status$statistic,PCA_ANS_batch_KNN$statistic, PCA_ANS_Status_KNN$statistic,scvi_ANS_batch_KNN$statistic, scvi_ANS_Status_KNN$statistic,
+                                Har_sam_ANS_batch$statistic, Har_sam_ANS_Status$statistic,scvi_sam_ANS_batch$statistic, scvi_sam_ANS_Status$statistic,Har_sam_ANS_batch_KNN$statistic, Har_sam_ANS_Status_KNN$statistic,scvi_sam_ANS_batch_KNN$statistic, scvi_sam_ANS_Status_KNN$statistic,
+                                Har_cohort_ANS_batch$statistic, Har_cohort_ANS_Status$statistic, scvi_cohort_ANS_batch$statistic, scvi_cohort_ANS_Status$statistic,Har_cohort_ANS_batch_KNN$statistic, Har_cohort_ANS_Status_KNN$statistic, scvi_cohort_ANS_batch_KNN$statistic, scvi_cohort_ANS_Status_KNN$statistic))
+
+R_data$DimReduc = factor(R_data$DimReduc, levels = c("Original", "Correct, Sample", "Correct, Batch"))
+R_data$comb = paste0(R_data$Correction, "_", R_data$Dens)
+
+ggplot(R_data, aes(x = DimReduc, y = Value, group = Group))+
+  geom_point(aes(col = Group))+
+  geom_line(aes(col = Group)) +
+  theme_bw() +
+  facet_wrap(Dens~Correction)+
+  ylab("R Value")
+
+ggplot(R_data, aes(x = DimReduc, y = Value, group = comb))+
+  geom_point(aes(col = Correction))+
+  geom_line(aes(linetype  = Dens, col = Correction)) +
+    scale_color_manual(values= safe_colorblind_palette)+
+  theme_bw() +
+  facet_wrap(~Group)+
+  ylab("R Value")+
+        theme(axis.text.x = element_text(angle = 30, hjust=1))+
+  ggtitle("SLE Lupus data")
+
+
+#save(R_data, O2_data, file = "../../results/BatchStudy/Perez2022_stat_manualbatch.Rda")
+```
+
+
+# on old batch
+## PCA,GMM
+
+```{r}
+#anosim(dist_mat_GMM_PCA,meta$Site)
+PCA_ANS_batch <- anosim(dist_mat_GMM_PCA, meta$Processing_Cohort)
+PCA_ANS_Status <- anosim(dist_mat_GMM_PCA, meta$disease_state)
+
+#anosim(res, meta_sub$Status)
+PCA_ANO_batch <- adonis2(dist_mat_GMM_PCA ~meta$Processing_Cohort)
+PCA_ANO_Status <- adonis2(dist_mat_GMM_PCA ~meta$disease_state)
+
+O2_PCA = O2(PCA_ANO_batch)
+O2_PCA_status = O2(PCA_ANO_Status)
+
+```
+
+
+```{r}
+
+Har_sam_ANS_batch <- anosim(dist_mat_GMM_har_sample, meta$Processing_Cohort)
+Har_sam_ANS_Status <- anosim(dist_mat_GMM_har_sample, meta$disease_state)
+
+#anosim(res, meta_sub$Status)
+Har_sam_ANO <- adonis2(dist_mat_GMM_har_sample ~meta$Processing_Cohort)
+Har_sam_ANO_Status <- adonis2(dist_mat_GMM_har_sample~meta$disease_state)
+
+O2_Har_sam = O2(Har_sam_ANO)
+O2_Har_sam_status = O2(Har_sam_ANO_Status)
+
+```
+
+```{r}
+
+Har_cohort_ANS_batch <- anosim(dist_mat_GMM_har_batch, meta$Processing_Cohort)
+Har_cohort_ANS_Status <- anosim(dist_mat_GMM_har_batch, meta$disease_state)
+
+#anosim(res, meta_sub$Status)
+Har_cohort_ANO <- adonis2(dist_mat_GMM_har_batch ~meta$Processing_Cohort)
+Har_cohort_ANO_Status <- adonis2(dist_mat_GMM_har_batch ~meta$disease_state)
+
+O2_Har_cohort = O2(Har_cohort_ANO)
+O2_Har_cohort_status = O2(Har_cohort_ANO_Status)
+
+```
+
+
+
+
+
+
+
+
+
+## ScVI, GMM
+
+```{r}
+#anosim(dist_mat_GMM_PCA,meta$Site)
+scvi_ANS_batch <- anosim(dist_mat_GMM_scvi, meta$Processing_Cohort)
+scvi_ANS_Status <- anosim(dist_mat_GMM_scvi, meta$disease_state)
+
+#anosim(res, meta_sub$Status)
+scvi_ANO_batch <- adonis2(dist_mat_GMM_scvi ~meta$Processing_Cohort)
+scvi_ANO_Status <- adonis2(dist_mat_GMM_scvi ~meta$disease_state)
+
+O2_scvi = O2(scvi_ANO_batch)
+O2_scvi_status = O2(scvi_ANO_Status)
+
+```
+
+
+```{r}
+
+scvi_sam_ANS_batch <- anosim(dist_mat_GMM_scvi_sample, meta$Processing_Cohort)
+scvi_sam_ANS_Status <- anosim(dist_mat_GMM_scvi_sample, meta$disease_state)
+
+#anosim(res, meta_sub$Status)
+scvi_sam_ANO <- adonis2(dist_mat_GMM_scvi_sample ~meta$Processing_Cohort)
+scvi_sam_ANO_Status <- adonis2(dist_mat_GMM_scvi_sample~meta$disease_state)
+
+O2_scvi_sam = O2(scvi_sam_ANO)
+O2_scvi_sam_status = O2(scvi_sam_ANO_Status)
+
+
+```
+
+```{r}
+
+scvi_cohort_ANS_batch <- anosim(dist_mat_GMM_scvi_batch, meta$Processing_Cohort)
+scvi_cohort_ANS_Status <- anosim(dist_mat_GMM_scvi_batch, meta$disease_state)
+
+#anosim(res, meta_sub$Status)
+scvi_cohort_ANO <- adonis2(dist_mat_GMM_scvi_batch ~meta$Processing_Cohort)
+scvi_cohort_ANO_Status <- adonis2(dist_mat_GMM_scvi_batch ~meta$disease_state)
+
+O2_scvi_cohort = O2(scvi_cohort_ANO)
+O2_scvi_cohort_status = O2(scvi_cohort_ANO_Status)
+
+```
+
+
+## PCA, KNN
+
+```{r}
+#anosim(dist_mat_GMM_PCA,meta$Site)
+PCA_ANS_batch_KNN <- anosim(dist_mat_KNN_PCA, meta$Processing_Cohort)
+PCA_ANS_Status_KNN <- anosim(dist_mat_KNN_PCA, meta$disease_state)
+
+#anosim(res, meta_sub$Status)
+PCA_ANO_batch_KNN <- adonis2(dist_mat_KNN_PCA ~meta$Processing_Cohort)
+PCA_ANO_Status_KNN <- adonis2(dist_mat_KNN_PCA ~meta$disease_state)
+
+O2_PCA_KNN = O2(PCA_ANO_batch_KNN)
+O2_PCA_status_KNN = O2(PCA_ANO_Status_KNN)
+
+```
+
+
+```{r}
+
+Har_sam_ANS_batch_KNN <- anosim(dist_mat_KNN_har_sample, meta$Processing_Cohort)
+Har_sam_ANS_Status_KNN <- anosim(dist_mat_KNN_har_sample, meta$disease_state)
+
+#anosim(res, meta_sub$Status)
+Har_sam_ANO_KNN <- adonis2(dist_mat_KNN_har_sample ~meta$Processing_Cohort)
+Har_sam_ANO_Status_KNN <- adonis2(dist_mat_KNN_har_sample~meta$disease_state)
+
+O2_Har_sam_KNN = O2(Har_sam_ANO_KNN)
+O2_Har_sam_status_KNN = O2(Har_sam_ANO_Status_KNN)
+
+
+```
+
+```{r}
+
+Har_cohort_ANS_batch_KNN <- anosim(dist_mat_KNN_har_batch, meta$Processing_Cohort)
+Har_cohort_ANS_Status_KNN <- anosim(dist_mat_KNN_har_batch, meta$disease_state)
+
+#anosim(res, meta_sub$Status)
+Har_cohort_ANO_KNN <- adonis2(dist_mat_KNN_har_batch ~meta$Processing_Cohort)
+Har_cohort_ANO_Status_KNN <- adonis2(dist_mat_KNN_har_batch ~meta$disease_state)
+
+O2_Har_cohort_KNN = O2(Har_cohort_ANO_KNN)
+O2_Har_cohort_status_KNN = O2(Har_cohort_ANO_Status_KNN)
+
+```
+
+
+
+
+
+
+
+
+
+
+## ScVI, KNN
+
+```{r}
+#anosim(dist_mat_GMM_PCA,meta$Site)
+scvi_ANS_batch_KNN <- anosim(dist_mat_KNN_scvi, meta$Processing_Cohort)
+scvi_ANS_Status_KNN <- anosim(dist_mat_KNN_scvi, meta$disease_state)
+
+#anosim(res, meta_sub$Status)
+scvi_ANO_batch_KNN <- adonis2(dist_mat_KNN_scvi ~meta$Processing_Cohort)
+scvi_ANO_Status_KNN <- adonis2(dist_mat_KNN_scvi ~meta$disease_state)
+
+O2_scvi_KNN = O2(scvi_ANO_batch_KNN)
+O2_scvi_status_KNN = O2(scvi_ANO_Status_KNN)
+
+
+```
+
+
+```{r}
+
+scvi_sam_ANS_batch_KNN <- anosim(dist_mat_KNN_scvi_sample, meta$Processing_Cohort)
+scvi_sam_ANS_Status_KNN <- anosim(dist_mat_KNN_scvi_sample, meta$disease_state)
+
+#anosim(res, meta_sub$Status)
+scvi_sam_ANO_KNN <- adonis2(dist_mat_KNN_scvi_sample ~meta$Processing_Cohort)
+scvi_sam_ANO_Status_KNN <- adonis2(dist_mat_KNN_scvi_sample~meta$disease_state)
+
+O2_scvi_sam_KNN = O2(scvi_sam_ANO_KNN)
+O2_scvi_sam_status_KNN = O2(scvi_sam_ANO_Status_KNN)
+
+```
+
+```{r}
+
+scvi_cohort_ANS_batch_KNN <- anosim(dist_mat_KNN_scvi_batch, meta$Processing_Cohort)
+scvi_cohort_ANS_Status_KNN <- anosim(dist_mat_KNN_scvi_batch, meta$disease_state)
+
+#anosim(res, meta_sub$Status)
+scvi_cohort_ANO_KNN <- adonis2(dist_mat_KNN_scvi_batch ~meta$Processing_Cohort)
+scvi_cohort_ANO_Status_KNN <- adonis2(dist_mat_KNN_scvi_batch ~meta$disease_state)
+
+O2_scvi_cohort_KNN = O2(scvi_cohort_ANO_KNN)
+O2_scvi_cohort_status_KNN = O2(scvi_cohort_ANO_Status_KNN)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+## summary
+
+
+
+```{r}
+O2_data <- data.frame(DimReduc = rep(c("Original", "Correct, Sample", "Correct, Batch"), each = 8),
+                      Group = rep(rep(c("Batch","Condition"),4),3),
+                      Dens = rep(c(rep("GMM", 4), rep("KNN",4)),3),
+                      Correction = rep(rep(c("PCA", "PCA", "ScVI", "ScVI"),2),3),
+                      Value = c(O2_PCA, O2_PCA_status,O2_scvi, O2_scvi_status,O2_PCA_KNN, O2_PCA_status_KNN, O2_scvi_KNN, O2_scvi_status_KNN,
+                                O2_Har_sam, O2_Har_sam_status,O2_scvi_sam, O2_scvi_sam_status,O2_Har_sam_KNN, O2_Har_sam_status_KNN,O2_scvi_sam_KNN, O2_scvi_sam_status_KNN,
+                                O2_Har_cohort, O2_Har_cohort_status,O2_scvi_cohort, O2_scvi_cohort_status,O2_Har_cohort_KNN, O2_Har_cohort_status_KNN,O2_scvi_cohort_KNN, O2_scvi_cohort_status_KNN))
+O2_data$DimReduc = factor(O2_data$DimReduc, levels = c("Original", "Correct, Sample", "Correct, Batch"))
+O2_data$comb = paste0(O2_data$Correction, "_", O2_data$Dens)
+
+ggplot(O2_data, aes(x = DimReduc, y = Value, group = Group))+
+  geom_point(aes(col = Group))+
+  geom_line(aes(col = Group)) +
+  theme_bw() +
+  facet_wrap(Dens~Correction)+
+  ylab("O2 Value")
+ggplot(O2_data, aes(x = DimReduc, y = Value, group = comb))+
+  geom_point(aes(col = Correction))+
+  geom_line(aes(linetype  = Dens, col = Correction)) +
+    scale_color_manual(values= safe_colorblind_palette)+
+  theme_bw() +
+  facet_wrap(~Group)+
+  ylab("O2 Value")+
+        theme(axis.text.x = element_text(angle = 30, hjust=1))+
+  ggtitle("SLE Lupus data")
+```
+
+
+```{r}
+R_data <- data.frame(DimReduc = rep(c("Original", "Correct, Sample", "Correct, Batch"), each = 8),
+                      Group = rep(rep(c("Batch","Condition"),4),3),
+                      Dens = rep(c(rep("GMM", 4), rep("KNN",4)),3),
+                      Correction = rep(rep(c("PCA", "PCA", "ScVI", "ScVI"),2),3),
+                      Value = c(PCA_ANS_batch$statistic, PCA_ANS_Status$statistic,scvi_ANS_batch$statistic, scvi_ANS_Status$statistic,PCA_ANS_batch_KNN$statistic, PCA_ANS_Status_KNN$statistic,scvi_ANS_batch_KNN$statistic, scvi_ANS_Status_KNN$statistic,
+                                Har_sam_ANS_batch$statistic, Har_sam_ANS_Status$statistic,scvi_sam_ANS_batch$statistic, scvi_sam_ANS_Status$statistic,Har_sam_ANS_batch_KNN$statistic, Har_sam_ANS_Status_KNN$statistic,scvi_sam_ANS_batch_KNN$statistic, scvi_sam_ANS_Status_KNN$statistic,
+                                Har_cohort_ANS_batch$statistic, Har_cohort_ANS_Status$statistic, scvi_cohort_ANS_batch$statistic, scvi_cohort_ANS_Status$statistic,Har_cohort_ANS_batch_KNN$statistic, Har_cohort_ANS_Status_KNN$statistic, scvi_cohort_ANS_batch_KNN$statistic, scvi_cohort_ANS_Status_KNN$statistic))
+
+R_data$DimReduc = factor(R_data$DimReduc, levels = c("Original", "Correct, Sample", "Correct, Batch"))
+R_data$comb = paste0(R_data$Correction, "_", R_data$Dens)
+
+ggplot(R_data, aes(x = DimReduc, y = Value, group = Group))+
+  geom_point(aes(col = Group))+
+  geom_line(aes(col = Group)) +
+  theme_bw() +
+  facet_wrap(Dens~Correction)+
+  ylab("R Value")
+
+ggplot(R_data, aes(x = DimReduc, y = Value, group = comb))+
+  geom_point(aes(col = Correction))+
+  geom_line(aes(linetype  = Dens, col = Correction)) +
+    scale_color_manual(values= safe_colorblind_palette)+
+  theme_bw() +
+  facet_wrap(~Group)+
+  ylab("R Value")+
+        theme(axis.text.x = element_text(angle = 30, hjust=1))+
+  ggtitle("SLE Lupus data")
+
+
+#save(R_data, O2_data, file = "../../results/BatchStudy/Perez2022_stat_manualbatch_onoriginal.Rda")
+```
+
+
+
+
+
+## Per batch
+
+
+```{r}
+batch2 <- meta$Processing_Cohort == "2.0"
+batch3 <- meta$Processing_Cohort == "3.0"
+batch4 <- meta$Processing_Cohort == "4.0"
+```
+
+
+```{r}
+dist_mat_GMM_PCA_2 <- dist_mat_GMM_PCA[batch2, batch2]
+dist_mat_GMM_PCA_3 <- dist_mat_GMM_PCA[batch3, batch3]
+dist_mat_GMM_PCA_4 <- dist_mat_GMM_PCA[batch4, batch4]
+
+
+PCA_ANS_2 <- anosim(dist_mat_GMM_PCA_2, meta$disease_state[batch2])
+PCA_ANS_3 <- anosim(dist_mat_GMM_PCA_3, meta$disease_state[batch3])
+PCA_ANS_4 <- anosim(dist_mat_GMM_PCA_4, meta$disease_state[batch4])
+
+#anosim(res, meta_sub$Status)
+PCA_ANO_2 <- adonis2(dist_mat_GMM_PCA_2 ~meta$disease_state[batch2])
+PCA_ANO_3 <- adonis2(dist_mat_GMM_PCA_3 ~meta$disease_state[batch3])
+PCA_ANO_4 <- adonis2(dist_mat_GMM_PCA_4 ~meta$disease_state[batch4])
+
+O2_PCA_2 = O2(PCA_ANO_2)
+O2_PCA_3 = O2(PCA_ANO_3)
+O2_PCA_4 = O2(PCA_ANO_4)
+```
+
+```{r}
+
+dist_2 = as.dist(dist_mat_GMM_PCA_2)
+    
+dist_vec_2 = c(dist_2)
+mycompare = c()
+for(j in 1:length(attr(dist_2, "Labels"))){
+      mycompare = c(mycompare, paste0(meta$disease_state[batch2][j], "-", meta$disease_state[batch2][-(1:j)]))
+}
+    
+mycompare = mycompare[-length(mycompare)]
+mycompare_list <- strsplit(mycompare, "-")
+group <- unlist(lapply(mycompare_list, function(x) ifelse(x[1] != x[2], "diff", x[1])))
+
+mean(dist_vec_2[group == "diff"])
+#mean(dist_vec_2[group == "flare"])
+mean(dist_vec_2[group == "managed"])
+mean(dist_vec_2[group == "na"])
+#mean(dist_vec_2[group == "treated"])
+
+
+```
+
+
+
+```{r}
+
+dist_3 = as.dist(dist_mat_GMM_PCA_3)
+    
+dist_vec_3 = c(dist_3)
+mycompare = c()
+for(j in 1:length(attr(dist_3, "Labels"))){
+      mycompare = c(mycompare, paste0(meta$disease_state[batch3][j], "-", meta$disease_state[batch3][-(1:j)]))
+}
+    
+mycompare = mycompare[-length(mycompare)]
+mycompare_list <- strsplit(mycompare, "-")
+group <- unlist(lapply(mycompare_list, function(x) ifelse(x[1] != x[2], "diff", x[1])))
+
+mean(dist_vec_3[group == "diff"])
+mean(dist_vec_3[group == "flare"])
+mean(dist_vec_3[group == "managed"])
+mean(dist_vec_3[group == "na"])
+mean(dist_vec_3[group == "treated"])
+
+
+```
+
+```{r}
+
+dist_4 = as.dist(dist_mat_GMM_PCA_4)
+    
+dist_vec_4 = c(dist_4)
+mycompare = c()
+for(j in 1:length(attr(dist_4, "Labels"))){
+      mycompare = c(mycompare, paste0(meta$disease_state[batch4][j], "-", meta$disease_state[batch4][-(1:j)]))
+}
+    
+mycompare = mycompare[-length(mycompare)]
+mycompare_list <- strsplit(mycompare, "-")
+group <- unlist(lapply(mycompare_list, function(x) ifelse(x[1] != x[2], "diff", x[1])))
+
+mean(dist_vec_4[group == "diff"])
+#mean(dist_vec_4[group == "flare"])
+mean(dist_vec_4[group == "managed"])
+mean(dist_vec_4[group == "na"])
+#mean(dist_vec_4[group == "treated"])
+
+
+```
+
+```{r}
+dist_data <- data.frame(distance = rep(c("Between Group", "Managed", "Healthy", "Flare", "Treated"), 4),
+               Batch = rep(c("1.0", "2.0", "3.0", "4.0"), each = 5),
+               value = c(NA,NA, 6.34, NA, NA, 11.02, 11.14,5.86, NA,NA,
+                         10.97,8.13, 4.7,8.46, 10.79,
+                         11.94, 11.84, 9.54, NA,NA))
+dist_data$distance = factor(dist_data$distance, levels = c("Between Group", "Managed", "Healthy", "Flare", "Treated"))
+ggplot(dist_data, aes(x = Batch, y = value, fill = distance)) +
+  geom_bar(position="dodge", stat="identity")  +
+  ylab("Average Distance")
+  
+```
+
+
+
+
+```{r}
+dist_mat_GMM_PCA_H <- dist_mat_GMM_PCA[meta$disease_state == "na",meta$disease_state == "na"]
+dist_mat_GMM_PCA_C <- dist_mat_GMM_PCA[meta$disease_state == "managed",meta$disease_state == "managed"]
+
+```
+
+```{r}
+
+dist_C = as.dist(dist_mat_GMM_PCA_C)
+    
+dist_vec_C = c(dist_C)
+mycompare = c()
+for(j in 1:length(attr(dist_C, "Labels"))){
+      mycompare = c(mycompare, paste0(meta$Processing_Cohort[meta$disease_state == "managed"][j], "-", meta$Processing_Cohort[meta$disease_state == "managed"][-(1:j)]))
+}
+    
+mycompare = mycompare[-length(mycompare)]
+mycompare_list <- strsplit(mycompare, "-")
+group <- unlist(lapply(mycompare_list, function(x) ifelse(x[1] != x[2], "diff",x[1])))
+
+mean(dist_vec_C[group == "diff"])
+#mean(dist_vec_C[group == "1.0"])
+mean(dist_vec_C[group == "2.0"])
+mean(dist_vec_C[group == "3.0"])
+mean(dist_vec_C[group == "4.0"])
+
+
+```
+
+```{r}
+
+dist_H = as.dist(dist_mat_GMM_PCA_H)
+    
+dist_vec_H = c(dist_H)
+mycompare = c()
+for(j in 1:length(attr(dist_H, "Labels"))){
+      mycompare = c(mycompare, paste0(meta$Processing_Cohort[meta$disease_state == "na"][j], "-", meta$Processing_Cohort[meta$disease_state == "na"][-(1:j)]))
+}
+    
+mycompare = mycompare[-length(mycompare)]
+mycompare_list <- strsplit(mycompare, "-")
+group <- unlist(lapply(mycompare_list, function(x) ifelse(x[1] != x[2], "diff", x[1])))
+
+mean(dist_vec_H[group == "diff"])
+mean(dist_vec_H[group == "1.0"])
+mean(dist_vec_H[group == "2.0"])
+mean(dist_vec_H[group == "3.0"])
+mean(dist_vec_H[group == "4.0"])
+
+
+
+```
+
+```{r}
+dist_data <- data.frame(Condition = rep(c("Managed", "Healthy", "Flare", "Treated"), each = 5),
+               Distance = rep(c("Between Batch", "1.0", "2.0", "3.0", "4.0"), 4),
+               value = c(29.97, NA,11.14,8.13,11.84, 22.79, 6.58, 5.86, 4.7, 9.54,
+                         NA, NA, NA, 8.46, NA, NA, NA, NA, 10.79, NA))
+
+ggplot(dist_data, aes(x = Condition, y = value, fill = Distance)) +
+  geom_bar(position="dodge", stat="identity")  +
+  ylab("Average Distance")
+```
+
+
+```{r}
+dist_mat_GMM_har_sample_2 <- dist_mat_GMM_har_sample[batch2, batch2]
+dist_mat_GMM_har_sample_3 <- dist_mat_GMM_har_sample[batch3, batch3]
+dist_mat_GMM_har_sample_4 <- dist_mat_GMM_har_sample[batch4, batch4]
+
+
+Har_Sam_ANS_2 <- anosim(dist_mat_GMM_har_sample_2, meta$disease_state[batch2])
+Har_Sam_ANS_3 <- anosim(dist_mat_GMM_har_sample_3, meta$disease_state[batch3])
+Har_Sam_ANS_4 <- anosim(dist_mat_GMM_har_sample_4, meta$disease_state[batch4])
+
+#anosim(res, meta_sub$Status)
+Har_Sam_ANO_2 <- adonis2(dist_mat_GMM_har_sample_2 ~meta$disease_state[batch2])
+Har_Sam_ANO_3 <- adonis2(dist_mat_GMM_har_sample_3 ~meta$disease_state[batch3])
+Har_Sam_ANO_4 <- adonis2(dist_mat_GMM_har_sample_4 ~meta$disease_state[batch4])
+
+O2_Har_sam_2 = O2(Har_Sam_ANO_2)
+O2_Har_sam_3 = O2(Har_Sam_ANO_3)
+O2_Har_sam_4 = O2(Har_Sam_ANO_4)
+```
+
+
+```{r}
+dist_mat_GMM_har_site_2 <- dist_mat_GMM_har_batch[batch2, batch2]
+dist_mat_GMM_har_site_3 <- dist_mat_GMM_har_batch[batch3, batch3]
+dist_mat_GMM_har_site_4 <- dist_mat_GMM_har_batch[batch4, batch4]
+
+
+Har_site_ANS_2 <- anosim(dist_mat_GMM_har_site_2, meta$disease_state[batch2])
+Har_site_ANS_3 <- anosim(dist_mat_GMM_har_site_3, meta$disease_state[batch3])
+Har_site_ANS_4 <- anosim(dist_mat_GMM_har_site_4, meta$disease_state[batch4])
+
+#anosim(res, meta_sub$Status)
+Har_site_ANO_2 <- adonis2(dist_mat_GMM_har_site_2 ~meta$disease_state[batch2])
+Har_site_ANO_3 <- adonis2(dist_mat_GMM_har_site_3 ~meta$disease_state[batch3])
+Har_site_ANO_4 <- adonis2(dist_mat_GMM_har_site_4 ~meta$disease_state[batch4])
+
+O2_Har_site_2 = O2(Har_site_ANO_2)
+O2_Har_site_3 = O2(Har_site_ANO_3)
+O2_Har_site_4 = O2(Har_site_ANO_4)
+```
+
+
+
+```{r}
+O2_data <- data.frame(DimReduc = rep(c("PCA", "Harmony, Sample", "Harmony, Batch"), each = 5),
+                      Group = rep(c("Batch","Condition","2.0 Condition", "3.0 Condition","4.0 Condition"),3),
+                      Value = c(O2_PCA, O2_PCA_status,O2_PCA_2, O2_PCA_3,O2_PCA_4,
+                                O2_Har_sam, O2_Har_sam_status,O2_Har_sam_2, O2_Har_sam_3,O2_Har_sam_4,
+                                O2_Har_site, O2_Har_site_status,O2_Har_site_2, O2_Har_site_3,O2_Har_site_4))
+O2_data$DimReduc = factor(O2_data$DimReduc, levels = c("PCA", "Harmony, Sample", "Harmony, Batch"))
+
+ggplot(O2_data, aes(x = DimReduc, y = Value, group = Group))+
+  geom_point(aes(col = Group))+
+  geom_line(aes(col = Group)) +
+  theme_bw() +
+  ylab("O2 Value")
+```
+
+```{r}
+R_data <- data.frame(DimReduc = rep(c("PCA", "Harmony, Sample", "Harmony, Batch"), each = 5),
+                      Group = rep(c("Batch","Condition", "2.0 Condition", "3.0 Condition","4.0 Condition"),3),
+                      Value = c(PCA_ANS_batch$statistic, PCA_ANS_Status$statistic,PCA_ANS_2$statistic, PCA_ANS_3$statistic,PCA_ANS_4$statistic,
+                                Har_sam_ANS_batch$statistic, Har_sam_ANS_Status$statistic,Har_Sam_ANS_2$statistic, Har_Sam_ANS_3$statistic,Har_Sam_ANS_4$statistic,
+                                Har_Site_ANS_batch$statistic, Har_Site_ANS_Status$statistic, Har_site_ANS_2$statistic, Har_site_ANS_3$statistic,Har_site_ANS_4$statistic))
+
+R_data$DimReduc = factor(R_data$DimReduc, levels = c("PCA", "Harmony, Sample", "Harmony, Batch"))
+
+ggplot(R_data, aes(x = DimReduc, y = Value, group = Group))+
+  geom_point(aes(col = Group))+
+  geom_line(aes(col = Group)) +
+  theme_bw() +
+  ylab("R Value")
+```
+
+
+
+
+
+# KNN test 
+
+## Permutation
+
+```{r}
+get_knn <- function(distmat, k, batch_id, sample_id, permutation = 1000){
+  knn_list = list()
+  for(i in seq(nrow(distmat))){
+    knn_vec = sort(distmat[i,- i])[1:k]
+    match_id <- match(names(knn_vec),sample_id)
+    
+    batch <- batch_id[match_id]
+    knn_list[[rownames(distmat)[i]]] = data.frame(dist = knn_vec,
+                             group = batch,
+                             sample = names(knn_vec))
+  }
+  x_vec <- c()
+  for(j in names(knn_list)){
+    self_batch <- batch_id[sample_id == j]
+    x = sum(knn_list[[j]]$group == self_batch)  
+    x_vec <- c(x_vec, x)
+  }
+  
+  x_bar <- mean(x_vec)
+  
+#  alignment <- 1-(x_bar - k/nrow(distmat))/(k-k/nrow(distmat))
+  xbar_per = c()
+  for(p in seq(permutation)){
+    per_id <- sample(batch_id, length(batch_id))
+    x_vec_per <- c()
+    for(l in names(knn_list)){
+       match_id <- match(knn_list[[l]]$sample,sample_id)
+       batch_per <- per_id[match_id]
+       self_batch_per <- per_id[sample_id == l]
+       x_per = sum(batch_per == self_batch)  
+       x_vec_per <- c(x_vec_per, x_per)
+       }
+    xbar_per <- c(xbar_per, mean(x_vec_per))
+  }
+  
+  return(list(x_bar = x_bar,
+              x_per = xbar_per,
+              test_stat = mean(x_bar>xbar_per)))
+}
+
+PCA_knnpermute <- get_knn(dist_mat_GMM_PCA_sub, k = 50,  meta_sub$Site, meta_sub$sample_id)
+Har_sam_knnpermute <- get_knn(dist_mat_GMM_har_sample_sub, k = 50,meta_sub$Site, meta_sub$sample_id)
+Har_batch_knnpermute <- get_knn(dist_mat_GMM_har_site_sub, k = 50, meta_sub$Site, meta_sub$sample_id)
+
+```
+
+## vs expected
+
+```{r}
+knn_expect <- function(distmat, k, batch_id, sample_id, type){
+  knn_list = list()
+  for(i in seq(nrow(distmat))){
+    knn_vec = sort(distmat[i,- i])[1:k]
+    match_id <- match(names(knn_vec),sample_id)
+    
+    batch <- batch_id[match_id]
+    knn_list[[rownames(distmat)[i]]] = data.frame(dist = knn_vec,
+                             group = batch,
+                             sample = names(knn_vec))
+  }
+  x_vec <- c()
+  group = table(batch_id)
+  
+  if(type == "original"){
+    exp_vec <- 0
+    for(g in group){
+      exp_vec <- exp_vec + k*g^2/sum(group)
+    }
+    expect_value <- exp_vec/length(sample_id)
+    for(j in names(knn_list)){
+      self_batch <- batch_id[sample_id == j]
+      x = sum(knn_list[[j]]$group == self_batch)  
+      x_vec <- c(x_vec, x)
+      }
+    x_bar <- mean(x_vec)
+  }else if(type == "weight"){
+    exp_vec <- 0
+    for(g in group){
+      exp_vec <- exp_vec + (k*g^2/sum(group))*(sum(group)/length(group)/g)
+    }
+    expect_value <- exp_vec/length(sample_id)
+    for(j in names(knn_list)){
+      self_batch <- batch_id[sample_id == j]
+      x = sum(knn_list[[j]]$group == self_batch)  
+      x_vec <- c(x_vec, x*sum(group)/length(group)/group[self_batch])
+      }
+    x_bar <- mean(x_vec)
+  }
+  
+  return(list(x_bar = x_bar, expect_value = expect_value))
+  
+}
+
+
+PCA_knnori <- knn_expect(dist_mat_GMM_PCA_sub, k = 50,  meta_sub$Site, meta_sub$sample_id, type = "original")
+Har_sam_knnori <- knn_expect(dist_mat_GMM_har_sample_sub, k = 50,meta_sub$Site, meta_sub$sample_id, type = "original")
+Har_batch_knnori <- knn_expect(dist_mat_GMM_har_site_sub, k = 50, meta_sub$Site, meta_sub$sample_id, type = "original")
+
+
+
+PCA_knnW <- knn_expect(dist_mat_GMM_PCA_sub, k = 50,  meta_sub$Site, meta_sub$sample_id, type = "weight")
+Har_sam_knnW <- knn_expect(dist_mat_GMM_har_sample_sub, k = 50,meta_sub$Site, meta_sub$sample_id, type = "weight")
+Har_batch_knnW <- knn_expect(dist_mat_GMM_har_site_sub, k = 50, meta_sub$Site, meta_sub$sample_id, type = "weight")
+```
+## bootstrap
+
+```{r}
+knn_bootstrap <- function(distmat, k, batch_id, sample_id){
+  # get bootstrap samples
+  batch_id = as.character(batch_id)
+  sample_id = as.character(sample_id)
+    group = table(batch_id)
+    max_group <- max(group)
+    rest_group <- group[-which(group == max_group)]
+    sim_sample <- c()
+    sim_batch <- c()
+    boot_distmat <- distmat
+    for(g in names(rest_group)){
+      need_sample <- max(group)-rest_group[g]
+      boot_sample_id <- sample(sample_id[batch_id == g],need_sample, replace = need_sample > rest_group[g])
+      sim_sample <- c(sim_sample, boot_sample_id)
+      sim_batch <- c(sim_batch, rep(g, need_sample))
+    }
+    for(b in seq(length(sim_sample))){
+      boot_value <- boot_distmat[sim_sample[b],]
+      boot_distmat = rbind(boot_distmat,boot_value)
+      boot_distmat = cbind(boot_distmat,c(boot_value,0))
+    }
+  boot_sample <- rownames(boot_distmat) <- colnames(boot_distmat)<- c(rownames(distmat), sim_sample)
+  
+  boot_batch <-  c(batch_id, sim_batch)
+  
+  knn_list = list()
+  for(i in seq(nrow(boot_distmat))){
+    knn_vec = sort(boot_distmat[i,-i])[1:k]
+    match_id <- match(names(knn_vec),boot_sample)
+    
+    batch <- boot_batch[match_id]
+    knn_list[[i]] = data.frame(dist = knn_vec,
+                             group = batch,
+                             sample = names(knn_vec))
+  }
+  x_vec <- c()
+  expect_value <- k*1/length(group)
+  for(j in seq(length(knn_list))){
+    self_batch <- boot_batch[j]
+    x = sum(knn_list[[j]]$group == self_batch)  
+    x_vec <- c(x_vec, x)
+    }
+  x_bar <- mean(x_vec)
+  return(list(expect_value = expect_value, x_bar = x_bar))
+}
+
+PCA_knnB <- knn_bootstrap(dist_mat_GMM_PCA_sub, k = 50,  meta_sub$Site, meta_sub$sample_id)
+Har_sam_knnB <- knn_bootstrap(dist_mat_GMM_har_sample_sub, k = 50,meta_sub$Site, meta_sub$sample_id)
+Har_batch_knnB <- knn_bootstrap(dist_mat_GMM_har_site_sub, k = 50, meta_sub$Site, meta_sub$sample_id)
+```
+
+
+```{r}
+library(reshape2)
+KNN_permute <- data.frame("DimReduc" = c("PCA", "Harmony, Sample", "Harmony, Batch"),
+                          "X_bar" = c(PCA_knnpermute$x_bar, Har_sam_knnpermute$x_bar, Har_batch_knnpermute$x_bar),
+                          "Boot X_bar" = c(PCA_knnB$x_bar, Har_sam_knnB$x_bar, Har_batch_knnB$expect_value),
+                          "Ave.X_bar-X_permute" = c(mean(PCA_knnpermute$x_bar - PCA_knnpermute$x_per),
+                                      mean(Har_sam_knnpermute$x_bar - Har_sam_knnpermute$x_per),
+                                      mean(Har_batch_knnpermute$x_bar - Har_batch_knnpermute$x_per))) 
+KNN_permute$DimReduc = factor(KNN_permute$DimReduc, levels = c("PCA", "Harmony, Sample", "Harmony, Batch"))
+
+KNN_permute_long <- melt(KNN_permute)
+
+ggplot(KNN_permute_long, aes(x = DimReduc, y = value, group = variable)) +
+  geom_point(aes(col = variable))+
+  geom_line(aes(col = variable))+
+  scale_color_discrete(name = "Value", labels = c("X_bar", "Bootstrap X_bar","avg. diff(X_bar,X_permute)"))+
+  geom_hline(yintercept = PCA_knnori$expect_value, col = "red")+
+   annotate("text", x="Harmony, Sample", y=PCA_knnori$expect_value-1, label= paste0("X_bar Expected value = ", round(PCA_knnori$expect_value,2)), col = "red") +
+    geom_hline(yintercept = PCA_knnB$expect_value, col = "green")+
+   annotate("text", x="Harmony, Sample", y=PCA_knnB$expect_value-1, label= paste0("Bootstrap X_bar Expected value = ", round(PCA_knnB$expect_value,2)), col = "green") +
+  theme_bw()
+```
+
