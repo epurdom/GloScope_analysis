@@ -1,0 +1,617 @@
+---
+title: "EvaluateBatch_original"
+output: 
+    html_document:
+        toc: true
+        toc_float: true
+        toc_collapsed: true
+        toc_depth: 3
+        number_sections: true
+        theme: cerulean
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE, message = FALSE, warning = FALSE
+)
+library(dplyr)
+library(ggplot2)
+library(vegan)
+
+colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9",
+                                "lightpink1","#CC79A7", 
+                       "#009E73", "#F0E442", "#0072B2", "#D55E00")
+safe_colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77",
+                             "#117733", "#332288", "#AA4499", 
+                             "#44AA99", "#999933", "#882255",
+                             "purple", "blue1", "#888888")       
+
+O2 <- function(PERMANOVA){
+  sumsq <- PERMANOVA$SumOfSqs
+  n <- PERMANOVA$Df
+  o2 <- (sumsq[1]-n[1]*(sumsq[2]/n[2]))/(sumsq[3] + sumsq[2]/n[2])
+  return(o2)
+}
+
+```
+
+
+```{r}
+
+load("../../results/BatchStudy/fabre_umap_lung.Rda")
+sort_order = names(sort(-table(plot_df[,"cell_type__ontology_label"])))
+plot_df$CellType = factor(plot_df$cell_type__ontology_label, levels = sort_order)
+ggplot(plot_df, aes(x = umap_1, y = umap_2)) +
+  geom_point(aes(col= CellType), size = 0.2) +
+  facet_wrap(~paper) +
+  scale_color_manual(values = c(safe_colorblind_palette,colorBlindBlack8 ))+
+  theme_bw()+
+  guides(colour = guide_legend(override.aes = list(size=4),
+                               title = "Cell Type")) 
+```
+
+# lung only
+
+```{r}
+plot_df <- readRDS("../../data/Processed_Datasets/fabreLung/metadata/fabreLung_default_metadata.Rds")
+meta <- unique(plot_df[, c("sample", "patient", "group", "batch")])
+
+load("../../results/BatchStudy/dist_mat_fabre_lung_update.Rda")
+
+
+rownames(meta) <- as.character(meta$sample)
+meta <- meta[rownames(dist_mat_GMM_PCA),]
+```
+
+```{r}
+library(NMF)
+colfunc <- colorRampPalette(c("white", "blue1", "purple","red")) #
+aheatmap(dist_mat_GMM_PCA, color = colfunc(51),
+         annCol = list("Condition" = meta$group,
+                       "Condition" = meta$group,
+                       "Condition" = meta$group,
+                       "Batch" = meta$batch,
+                       "Batch" = meta$batch,
+                       "Batch" = meta$batch),
+         annColors = list('Condition' = c(safe_colorblind_palette, colorBlindBlack8[-3]),
+                          "Batch" = colorBlindBlack8),
+         Colv = T, Rowv = FALSE,
+         labRow = rep("", nrow(dist_mat_GMM_PCA)),
+         labCol = rep("", nrow(dist_mat_GMM_PCA)),
+         main = "")
+```
+
+```{r}
+
+aheatmap(dist_mat_GMM_har_sample, color = colfunc(51),
+         annCol = list("Condition" = meta$group,
+                       "Condition" = meta$group,
+                       "Condition" = meta$group,
+                       "Batch" = meta$batch,
+                       "Batch" = meta$batch,
+                       "Batch" = meta$batch),
+         annColors = list('Condition' = c(safe_colorblind_palette, colorBlindBlack8[-3]),
+                          "Batch" = colorBlindBlack8),
+         Colv = T, Rowv = FALSE,
+         labRow = rep("", nrow(dist_mat_GMM_PCA)),
+         labCol = rep("", nrow(dist_mat_GMM_PCA)),
+         main = "")
+```
+
+```{r}
+aheatmap(dist_mat_GMM_har_paper, color = colfunc(51),
+         annCol = list("Condition" = meta$group,
+                       "Condition" = meta$group,
+                       "Condition" = meta$group,
+                       "Batch" = meta$batch,
+                       "Batch" = meta$batch,
+                       "Batch" = meta$batch),
+         annColors = list('Condition' = c(safe_colorblind_palette, colorBlindBlack8[-3]),
+                          "Batch" = colorBlindBlack8),
+         Colv = T, Rowv = FALSE,
+         labRow = rep("", nrow(dist_mat_GMM_PCA)),
+         labCol = rep("", nrow(dist_mat_GMM_PCA)),
+         main = "")
+```
+
+
+## GMM, Harmony
+
+```{r}
+#anosim(dist_mat_GMM_PCA,meta$Site)
+PCA_ANS_batch <- anosim(dist_mat_GMM_PCA, meta$batch)
+PCA_ANS_Status <- anosim(dist_mat_GMM_PCA, meta$group)
+
+#anosim(res, meta$Status)
+PCA_ANO_batch <- adonis2(dist_mat_GMM_PCA ~meta$batch)
+PCA_ANO_Status <- adonis2(dist_mat_GMM_PCA ~meta$group)
+
+O2_PCA = O2(PCA_ANO_batch)
+O2_PCA_status = O2(PCA_ANO_Status)
+
+ fit_df <- MASS::isoMDS(sqrt(dist_mat_GMM_PCA), k = 2, trace = FALSE)
+    colnames(fit_df$points) <- paste0("Coordinate",seq_len(2))
+    mds_df <- cbind(meta, fit_df$points)
+    
+    ggplot(mds_df, aes(x = Coordinate1, y = Coordinate2)) + 
+  geom_point(aes(col = group,
+                 shape = batch), size =3) +
+      scale_shape_manual(values=c(16, 7,3,5,11,17))+
+  scale_color_manual(values=c(colorBlindBlack8[-4], safe_colorblind_palette) )+
+    theme_bw() 
+
+```
+
+
+```{r}
+
+Har_sam_ANS_batch <- anosim(dist_mat_GMM_har_sample, meta$batch)
+Har_sam_ANS_Status <- anosim(dist_mat_GMM_har_sample, meta$group)
+
+#anosim(res, meta$Status)
+Har_sam_ANO <- adonis2(dist_mat_GMM_har_sample ~meta$batch)
+Har_sam_ANO_Status <- adonis2(dist_mat_GMM_har_sample ~meta$group)
+
+O2_Har_sam = O2(Har_sam_ANO)
+O2_Har_sam_status = O2(Har_sam_ANO_Status)
+
+ fit_df <- MASS::isoMDS(sqrt(dist_mat_GMM_har_sample), k = 2, trace = FALSE)
+    colnames(fit_df$points) <- paste0("Coordinate",seq_len(2))
+    mds_df <- cbind(meta, fit_df$points)
+    
+    ggplot(mds_df, aes(x = Coordinate1, y = Coordinate2)) + 
+  geom_point(aes(col = group,
+                 shape = batch), size =3) +
+      scale_shape_manual(values=c(16, 7,3,5,11,17))+
+  scale_color_manual(values=c(colorBlindBlack8[-4], safe_colorblind_palette) )+
+    theme_bw() 
+```
+
+```{r}
+#res[lower.tri(res)]  <- t(res)[lower.tri(res)]
+#anosim(dist_mat_GMM_PCA,meta$Site)
+Har_Site_ANS_batch <- anosim(dist_mat_GMM_har_paper, meta$batch)
+Har_Site_ANS_Status <- anosim(dist_mat_GMM_har_paper, meta$group)
+
+#anosim(res, meta$Status)
+Har_Site_ANO <- adonis2(dist_mat_GMM_har_paper ~meta$batch)
+Har_Site_ANO_Status <- adonis2(dist_mat_GMM_har_paper ~meta$group)
+
+O2_Har_site = O2(Har_Site_ANO)
+O2_Har_site_status = O2(Har_Site_ANO_Status)
+
+
+ fit_df <- MASS::isoMDS(sqrt(dist_mat_GMM_har_paper), k = 2, trace = FALSE)
+    colnames(fit_df$points) <- paste0("Coordinate",seq_len(2))
+    mds_df <- cbind(meta, fit_df$points)
+    
+    ggplot(mds_df, aes(x = Coordinate1, y = Coordinate2)) + 
+  geom_point(aes(col = group,
+                 shape = batch), size =3) +
+      scale_shape_manual(values=c(16, 7,3,5,11,17))+
+  scale_color_manual(values=c(colorBlindBlack8[-4], safe_colorblind_palette) )+
+    theme_bw() 
+```
+
+
+
+
+## KNN, Harmony
+
+
+```{r}
+#anosim(dist_mat_GMM_PCA,meta$Site)
+PCA_ANS_batch_KNN <- anosim(dist_mat_KNN_PCA, meta$batch)
+PCA_ANS_Status_KNN <- anosim(dist_mat_KNN_PCA, meta$group)
+
+PCA_ANO_batch_KNN <- adonis2(dist_mat_KNN_PCA ~meta$batch)
+PCA_ANO_Status_KNN <- adonis2(dist_mat_KNN_PCA ~meta$group)
+
+O2_PCA_KNN = O2(PCA_ANO_batch_KNN)
+O2_PCA_status_KNN = O2(PCA_ANO_Status_KNN)
+
+ fit_df <- MASS::isoMDS(sqrt(dist_mat_KNN_PCA), k = 2, trace = FALSE)
+    colnames(fit_df$points) <- paste0("Coordinate",seq_len(2))
+    mds_df <- cbind(meta, fit_df$points)
+    
+    ggplot(mds_df, aes(x = Coordinate1, y = Coordinate2)) + 
+  geom_point(aes(col = group,
+                 shape = batch), size =3) +
+      scale_shape_manual(values=c(16, 7,3,5,11,17))+
+  scale_color_manual(values=c(colorBlindBlack8[-4], safe_colorblind_palette) )+
+    theme_bw() 
+```
+
+
+```{r}
+#res[lower.tri(res)]  <- t(res)[lower.tri(res)]
+#anosim(dist_mat_KNN_PCA,meta$Site)
+Har_sam_ANS_batch_KNN <- anosim(dist_mat_KNN_har_sample, meta$batch)
+Har_sam_ANS_Status_KNN <- anosim(dist_mat_KNN_har_sample, meta$group)
+
+#anosim(res, meta$Status)
+
+Har_sam_ANO_KNN <- adonis2(dist_mat_KNN_har_sample ~meta$batch)
+Har_sam_ANO_Status_KNN <- adonis2(dist_mat_KNN_har_sample ~meta$group)
+
+O2_Har_sam_KNN = O2(Har_sam_ANO_KNN)
+O2_Har_sam_status_KNN = O2(Har_sam_ANO_Status_KNN)
+
+ fit_df <- MASS::isoMDS(sqrt(dist_mat_KNN_har_sample), k = 2, trace = FALSE)
+    colnames(fit_df$points) <- paste0("Coordinate",seq_len(2))
+    mds_df <- cbind(meta, fit_df$points)
+    
+    ggplot(mds_df, aes(x = Coordinate1, y = Coordinate2)) + 
+  geom_point(aes(col = group,
+                 shape = batch), size =3) +
+      scale_shape_manual(values=c(16, 7,3,5,11,17))+
+  scale_color_manual(values=c(colorBlindBlack8[-4], safe_colorblind_palette) )+
+    theme_bw() 
+```
+
+```{r}
+#res[lower.tri(res)]  <- t(res)[lower.tri(res)]
+#anosim(dist_mat_KNN_PCA,meta$Site)
+Har_Site_ANS_batch_KNN <- anosim(dist_mat_KNN_har_paper, meta$batch)
+Har_Site_ANS_Status_KNN <- anosim(dist_mat_KNN_har_paper, meta$group)
+
+#anosim(res, meta$Status)
+Har_Site_ANO_KNN <- adonis2(dist_mat_KNN_har_paper ~meta$batch)
+Har_Site_ANO_Status_KNN <- adonis2(dist_mat_KNN_har_paper ~meta$group)
+
+O2_Har_site_KNN = O2(Har_Site_ANO_KNN)
+O2_Har_site_status_KNN = O2(Har_Site_ANO_Status_KNN)
+
+ fit_df <- MASS::isoMDS(sqrt(dist_mat_KNN_har_paper), k = 2, trace = FALSE)
+    colnames(fit_df$points) <- paste0("Coordinate",seq_len(2))
+    mds_df <- cbind(meta, fit_df$points)
+    
+    ggplot(mds_df, aes(x = Coordinate1, y = Coordinate2)) + 
+  geom_point(aes(col = batch,
+                 shape = batch), size =3) +
+      scale_shape_manual(values=c(16, 7,3,5,11,17))+
+  scale_color_manual(values=c(colorBlindBlack8[-4], safe_colorblind_palette) )+
+    theme_bw() 
+```
+
+
+## summary
+
+```{r}
+O2_data <- data.frame(DimReduc = rep(c("Original", "Correct, Sample", "Correct, Batch"), each = 4),
+                      Group = rep(rep(c("Batch","Condition"),2),3),
+                      Dens = rep(c(rep("GMM", 2), rep("KNN",2)),3),
+                      Correction = rep(rep(c("Harmony, PCA", "Harmony, PCA"),2),3),
+                      Value = c(O2_PCA, O2_PCA_status,O2_PCA_KNN, O2_PCA_status_KNN,
+                                O2_Har_sam, O2_Har_sam_status,O2_Har_sam_KNN, O2_Har_sam_status_KNN,
+                                O2_Har_site, O2_Har_site_status,O2_Har_site_KNN, O2_Har_site_status_KNN))
+O2_data$DimReduc = factor(O2_data$DimReduc, levels = c("Original", "Correct, Sample", "Correct, Batch"))
+O2_data$comb = paste0(O2_data$Correction, "_", O2_data$Dens)
+
+ggplot(O2_data, aes(x = DimReduc, y = Value, group = Group))+
+  geom_point(aes(col = Group))+
+  geom_line(aes(col = Group)) +
+  theme_bw() +
+  facet_wrap(Dens~Correction)+
+  ylab("O2 Value")
+
+ggplot(O2_data, aes(x = DimReduc, y = Value, group = comb))+
+  geom_point(aes(col = Correction))+
+  geom_line(aes(linetype  = Dens, col = Correction)) +
+    scale_color_manual(values= safe_colorblind_palette)+
+  theme_bw() +
+  facet_wrap(~Group)+
+  ylab("O2 Value")+
+      theme(axis.text.x = element_text(angle = 30, hjust=1))+
+  ggtitle("COVID PBMC data")
+
+
+
+```
+
+
+```{r}
+R_data <- data.frame(DimReduc = rep(c("Original", "Correct, Sample", "Correct, Batch"), each = 4),
+                      Group = rep(rep(c("Batch","Condition"),2),3),
+                      Dens = rep(c(rep("GMM", 2), rep("KNN",2)),3),
+                      Correction = rep(rep(c("Harmony, PCA", "Harmony, PCA"),2),3),
+                      Value = c(PCA_ANS_batch$statistic, PCA_ANS_Status$statistic,PCA_ANS_batch_KNN$statistic, PCA_ANS_Status_KNN$statistic,
+                                Har_sam_ANS_batch$statistic, Har_sam_ANS_Status$statistic,Har_sam_ANS_batch_KNN$statistic, Har_sam_ANS_Status_KNN$statistic,
+                                Har_Site_ANS_batch$statistic, Har_Site_ANS_Status$statistic, Har_Site_ANS_batch_KNN$statistic, Har_Site_ANS_Status_KNN$statistic))
+
+R_data$DimReduc = factor(R_data$DimReduc, levels = c("Original", "Correct, Sample", "Correct, Batch"))
+R_data$comb = paste0(R_data$Correction, "_", R_data$Dens)
+
+ggplot(R_data, aes(x = DimReduc, y = Value, group = Group))+
+  geom_point(aes(col = Group))+
+  geom_line(aes(col = Group)) +
+  theme_bw() +
+  facet_wrap(Dens~Correction)+
+  ylab("R Value")
+
+
+
+
+ggplot(R_data, aes(x = DimReduc, y = Value, group = comb))+
+  geom_point(aes(col = Correction))+
+  geom_line(aes(linetype  = Dens, col = Correction)) +
+    scale_color_manual(values= safe_colorblind_palette)+
+  theme_bw() +
+  facet_wrap(~Group)+
+  ylab("R Value")+
+        theme(axis.text.x = element_text(angle = 30, hjust=1))+
+  ggtitle("COVID PBMC data")
+
+
+save(R_data, O2_data, file = "../../results/BatchStudy/fabreLung_stat_update.Rda")
+```
+
+
+
+
+
+
+# liver only
+
+```{r}
+plot_df <- readRDS("../../data/Processed_Datasets/fabreLiver/metadata/fabreLiver_default_metadata.Rds")
+meta <- unique(plot_df[, c("sample", "patient", "group", "batch")])
+
+load("../../results/BatchStudy/dist_mat_fabre_liver_update.Rda")
+load("../../results/BatchStudy/distmat_fabre_liver_scvi.Rda")
+
+
+rownames(meta) <- as.character(meta$sample)
+meta <- meta[rownames(dist_mat_GMM_PCA),]
+```
+
+```{r}
+aheatmap(dist_mat_GMM_PCA, color = colfunc(51),
+         annCol = list("Condition" = meta$group,
+                       "Condition" = meta$group,
+                       "Condition" = meta$group,
+                       "Batch" = meta$batch,
+                       "Batch" = meta$batch,
+                       "Batch" = meta$batch),
+         annColors = list('Condition' = c(safe_colorblind_palette, colorBlindBlack8[-3]),
+                          "Batch" = colorBlindBlack8),
+         Colv = T, Rowv = FALSE,
+         labRow = rep("", nrow(dist_mat_GMM_PCA)),
+         labCol = rep("", nrow(dist_mat_GMM_PCA)),
+         main = "")
+```
+
+## GMM, Harmony
+
+```{r}
+#anosim(dist_mat_GMM_PCA,meta$Site)
+PCA_ANS_batch <- anosim(dist_mat_GMM_PCA, meta$batch)
+PCA_ANS_Status <- anosim(dist_mat_GMM_PCA, meta$group)
+
+#anosim(res, meta_liver$Status)
+PCA_ANO_batch <- adonis2(dist_mat_GMM_PCA ~meta$batch)
+PCA_ANO_Status <- adonis2(dist_mat_GMM_PCA ~meta$group)
+
+O2_PCA = O2(PCA_ANO_batch)
+O2_PCA_status = O2(PCA_ANO_Status)
+
+ fit_df <- MASS::isoMDS(sqrt(dist_mat_GMM_PCA), k = 2, trace = FALSE)
+    colnames(fit_df$points) <- paste0("Coordinate",seq_len(2))
+    mds_df <- cbind(meta, fit_df$points)
+    
+    ggplot(mds_df, aes(x = Coordinate1, y = Coordinate2)) + 
+  geom_point(aes(col = group,
+                 shape = batch), size =3) +
+      scale_shape_manual(values=c(16, 7,3,5,11,17))+
+  scale_color_manual(values=c(colorBlindBlack8[-4], safe_colorblind_palette) )+
+    theme_bw() 
+
+```
+
+
+```{r}
+
+Har_sam_ANS_batch <- anosim(dist_mat_GMM_har_sample, meta$batch)
+Har_sam_ANS_Status <- anosim(dist_mat_GMM_har_sample, meta$group)
+
+#anosim(res, meta_liver$Status)
+Har_sam_ANO <- adonis2(dist_mat_GMM_har_sample ~meta$batch)
+Har_sam_ANO_Status <- adonis2(dist_mat_GMM_har_sample ~meta$group)
+
+O2_Har_sam = O2(Har_sam_ANO)
+O2_Har_sam_status = O2(Har_sam_ANO_Status)
+
+ fit_df <- MASS::isoMDS(sqrt(dist_mat_GMM_har_sample), k = 2, trace = FALSE)
+    colnames(fit_df$points) <- paste0("Coordinate",seq_len(2))
+    mds_df <- cbind(meta, fit_df$points)
+    
+    ggplot(mds_df, aes(x = Coordinate1, y = Coordinate2)) + 
+  geom_point(aes(col = group,
+                 shape = batch), size =3) +
+      scale_shape_manual(values=c(16, 7,3,5,11,17))+
+  scale_color_manual(values=c(colorBlindBlack8[-4], safe_colorblind_palette) )+
+    theme_bw() 
+```
+
+```{r}
+#res[lower.tri(res)]  <- t(res)[lower.tri(res)]
+#anosim(dist_mat_GMM_PCA,meta_liver$Site)
+Har_Site_ANS_batch <- anosim(dist_mat_GMM_har_paper, meta$batch)
+Har_Site_ANS_Status <- anosim(dist_mat_GMM_har_paper, meta$group)
+
+#anosim(res, meta_liver$Status)
+Har_Site_ANO <- adonis2(dist_mat_GMM_har_paper ~meta$batch)
+Har_Site_ANO_Status <- adonis2(dist_mat_GMM_har_paper ~meta$group)
+
+O2_Har_site = O2(Har_Site_ANO)
+O2_Har_site_status = O2(Har_Site_ANO_Status)
+
+
+ fit_df <- MASS::isoMDS(sqrt(dist_mat_GMM_har_paper), k = 2, trace = FALSE)
+    colnames(fit_df$points) <- paste0("Coordinate",seq_len(2))
+    mds_df <- cbind(meta, fit_df$points)
+    
+    ggplot(mds_df, aes(x = Coordinate1, y = Coordinate2)) + 
+  geom_point(aes(col = group,
+                 shape = batch), size =3) +
+      scale_shape_manual(values=c(16, 7,3,5,11,17))+
+  scale_color_manual(values=c(colorBlindBlack8[-4], safe_colorblind_palette) )+
+    theme_bw() 
+```
+
+
+## KNN, Harmony
+
+
+```{r}
+#anosim(dist_mat_GMM_PCA,meta$Site)
+PCA_ANS_batch_KNN <- anosim(dist_mat_KNN_PCA, meta$batch)
+PCA_ANS_Status_KNN <- anosim(dist_mat_KNN_PCA, meta$group)
+
+PCA_ANO_batch_KNN <- adonis2(dist_mat_KNN_PCA ~meta$batch)
+PCA_ANO_Status_KNN <- adonis2(dist_mat_KNN_PCA ~meta$group)
+
+O2_PCA_KNN = O2(PCA_ANO_batch_KNN)
+O2_PCA_status_KNN = O2(PCA_ANO_Status_KNN)
+
+ fit_df <- MASS::isoMDS(sqrt(dist_mat_KNN_PCA), k = 2, trace = FALSE)
+    colnames(fit_df$points) <- paste0("Coordinate",seq_len(2))
+    mds_df <- cbind(meta, fit_df$points)
+    
+    ggplot(mds_df, aes(x = Coordinate1, y = Coordinate2)) + 
+  geom_point(aes(col = group,
+                 shape = batch), size =3) +
+      scale_shape_manual(values=c(16, 7,3,5,11,17))+
+  scale_color_manual(values=c(colorBlindBlack8[-4], safe_colorblind_palette) )+
+    theme_bw() 
+```
+
+
+```{r}
+#dist_mat_KNN_har_sample[dist_mat_KNN_har_sample<0] = 0
+#res[lower.tri(res)]  <- t(res)[lower.tri(res)]
+#anosim(dist_mat_KNN_PCA,meta$Site)
+Har_sam_ANS_batch_KNN <- anosim(dist_mat_KNN_har_sample, meta$batch)
+Har_sam_ANS_Status_KNN <- anosim(dist_mat_KNN_har_sample, meta$group)
+
+#anosim(res, meta$Status)
+
+Har_sam_ANO_KNN <- adonis2(dist_mat_KNN_har_sample ~meta$batch)
+Har_sam_ANO_Status_KNN <- adonis2(dist_mat_KNN_har_sample ~meta$group)
+
+O2_Har_sam_KNN = O2(Har_sam_ANO_KNN)
+O2_Har_sam_status_KNN = O2(Har_sam_ANO_Status_KNN)
+
+ fit_df <- MASS::isoMDS(sqrt(dist_mat_KNN_har_sample), k = 2, trace = FALSE)
+    colnames(fit_df$points) <- paste0("Coordinate",seq_len(2))
+    mds_df <- cbind(meta, fit_df$points)
+    
+    ggplot(mds_df, aes(x = Coordinate1, y = Coordinate2)) + 
+  geom_point(aes(col = group,
+                 shape = batch), size =3) +
+      scale_shape_manual(values=c(16, 7,3,5,11,17))+
+  scale_color_manual(values=c(colorBlindBlack8[-4], safe_colorblind_palette) )+
+    theme_bw() 
+```
+
+```{r}
+#res[lower.tri(res)]  <- t(res)[lower.tri(res)]
+#anosim(dist_mat_KNN_PCA,meta$Site)
+Har_Site_ANS_batch_KNN <- anosim(dist_mat_KNN_har_paper, meta$batch)
+Har_Site_ANS_Status_KNN <- anosim(dist_mat_KNN_har_paper, meta$group)
+
+#anosim(res, meta$Status)
+Har_Site_ANO_KNN <- adonis2(dist_mat_KNN_har_paper ~meta$batch)
+Har_Site_ANO_Status_KNN <- adonis2(dist_mat_KNN_har_paper ~meta$group)
+
+O2_Har_site_KNN = O2(Har_Site_ANO_KNN)
+O2_Har_site_status_KNN = O2(Har_Site_ANO_Status_KNN)
+
+ fit_df <- MASS::isoMDS(sqrt(dist_mat_KNN_har_paper), k = 2, trace = FALSE)
+    colnames(fit_df$points) <- paste0("Coordinate",seq_len(2))
+    mds_df <- cbind(meta, fit_df$points)
+    
+    ggplot(mds_df, aes(x = Coordinate1, y = Coordinate2)) + 
+  geom_point(aes(col = group,
+                 shape = batch), size =3) +
+      scale_shape_manual(values=c(16, 7,3,5,11,17))+
+  scale_color_manual(values=c(colorBlindBlack8[-4], safe_colorblind_palette) )+
+    theme_bw() 
+```
+
+
+## summary
+
+```{r}
+O2_data <- data.frame(DimReduc = rep(c("Original", "Correct, Sample", "Correct, Batch"), each = 8),
+                      Group = rep(rep(c("Batch","Condition"),4),3),
+                      Dens = rep(c(rep("GMM", 4), rep("KNN",4)),3),
+                      Correction = rep(rep(c("Harmony, PCA", "Harmony, PCA", "ScVI", "ScVI"),2),3),
+                      Value = c(O2_PCA, O2_PCA_status,O2_scvi, O2_scvi_status,O2_PCA_KNN, O2_PCA_status_KNN, O2_scvi_KNN, O2_scvi_status_KNN,
+                                O2_Har_sam, O2_Har_sam_status,O2_scvi_sam, O2_scvi_sam_status,O2_Har_sam_KNN, O2_Har_sam_status_KNN,O2_scvi_sam_KNN, O2_scvi_sam_status_KNN,
+                                O2_Har_site, O2_Har_site_status,O2_scvi_site, O2_scvi_site_status,O2_Har_site_KNN, O2_Har_site_status_KNN,O2_scvi_site_KNN, O2_scvi_site_status_KNN))
+O2_data$DimReduc = factor(O2_data$DimReduc, levels = c("Original", "Correct, Sample", "Correct, Batch"))
+O2_data$comb = paste0(O2_data$Correction, "_", O2_data$Dens)
+
+ggplot(O2_data, aes(x = DimReduc, y = Value, group = Group))+
+  geom_point(aes(col = Group))+
+  geom_line(aes(col = Group)) +
+  theme_bw() +
+  facet_wrap(Dens~Correction)+
+  ylab("O2 Value")
+
+ggplot(O2_data, aes(x = DimReduc, y = Value, group = comb))+
+  geom_point(aes(col = Correction))+
+  geom_line(aes(linetype  = Dens, col = Correction)) +
+    scale_color_manual(values= safe_colorblind_palette)+
+  theme_bw() +
+  facet_wrap(~Group)+
+  ylab("O2 Value")+
+      theme(axis.text.x = element_text(angle = 30, hjust=1))+
+  ggtitle("Fabre Liver data")
+
+
+
+```
+
+
+```{r}
+R_data <- data.frame(DimReduc = rep(c("Original", "Correct, Sample", "Correct, Batch"), each = 8),
+                      Group = rep(rep(c("Batch","Condition"),4),3),
+                      Dens = rep(c(rep("GMM", 4), rep("KNN",4)),3),
+                      Correction = rep(rep(c("Harmony, PCA", "Harmony, PCA", "ScVI", "ScVI"),2),3),
+                      Value = c(PCA_ANS_batch$statistic, PCA_ANS_Status$statistic,scvi_ANS_batch$statistic, scvi_ANS_Status$statistic,PCA_ANS_batch_KNN$statistic, PCA_ANS_Status_KNN$statistic,scvi_ANS_batch_KNN$statistic, scvi_ANS_Status_KNN$statistic,
+                                Har_sam_ANS_batch$statistic, Har_sam_ANS_Status$statistic,scvi_sam_ANS_batch$statistic, scvi_sam_ANS_Status$statistic,Har_sam_ANS_batch_KNN$statistic, Har_sam_ANS_Status_KNN$statistic,scvi_sam_ANS_batch_KNN$statistic, scvi_sam_ANS_Status_KNN$statistic,
+                                Har_Site_ANS_batch$statistic, Har_Site_ANS_Status$statistic, scvi_Site_ANS_batch$statistic, scvi_Site_ANS_Status$statistic,Har_Site_ANS_batch_KNN$statistic, Har_Site_ANS_Status_KNN$statistic, scvi_Site_ANS_batch_KNN$statistic, scvi_Site_ANS_Status_KNN$statistic))
+
+R_data$DimReduc = factor(R_data$DimReduc, levels = c("Original", "Correct, Sample", "Correct, Batch"))
+R_data$comb = paste0(R_data$Correction, "_", R_data$Dens)
+
+ggplot(R_data, aes(x = DimReduc, y = Value, group = Group))+
+  geom_point(aes(col = Group))+
+  geom_line(aes(col = Group)) +
+  theme_bw() +
+  facet_wrap(Dens~Correction)+
+  ylab("R Value")
+
+
+
+
+ggplot(R_data, aes(x = DimReduc, y = Value, group = comb))+
+  geom_point(aes(col = Correction))+
+  geom_line(aes(linetype  = Dens, col = Correction)) +
+    scale_color_manual(values= safe_colorblind_palette)+
+  theme_bw() +
+  facet_wrap(~Group)+
+  ylab("R Value")+
+        theme(axis.text.x = element_text(angle = 30, hjust=1))+
+  ggtitle("Fabre Liver data")
+
+
+save(R_data, O2_data, file = "../../results/BatchStudy/fabre_stat_liver_update.Rda")
+```
+
+
+
+
+

@@ -1,0 +1,916 @@
+---
+title: "EvaluateBatch_original"
+output: 
+    html_document:
+        toc: true
+        toc_float: true
+        toc_collapsed: true
+        toc_depth: 3
+        number_sections: true
+        theme: cerulean
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE, message = FALSE, warning = FALSE
+)
+# sbatch -p epurdom --wrap="Rscript -e \"rmarkdown::render('EvaluateBatch_BSdist_covid143.Rmd')\""
+library(dplyr)
+library(ggplot2)
+library(vegan)
+
+colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9",
+                                "lightpink1","#CC79A7", 
+                       "#009E73", "#F0E442", "#0072B2", "#D55E00")
+safe_colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77",
+                             "#117733", "#332288", "#AA4499", 
+                             "#44AA99", "#999933", "#882255",
+                             "purple", "blue1", "#888888")   
+```
+
+```{r}
+
+library(magick)
+library(ggplot2)
+library(gridExtra)
+library(grid)
+library(pdftools)
+library(cowplot)
+library(ggplotify )
+library("ggpubr")
+theme_set(
+  theme_bw() +
+    theme(legend.position = "top")
+  )
+```
+
+## COVID143
+
+```{r}
+load("../../results/BatchStudy/COVID143_stat.Rda")
+
+
+load("../../results/BatchStudy/COVID143_BSdist.Rda")
+```
+
+
+```{r}
+GMM_PCA_O2_batch <- unlist(lapply(stat_list, function(x) x[[1]][[1]]))
+GMM_PCA_O2_condition <- unlist(lapply(stat_list, function(x) x[[1]][[2]]))
+GMM_PCA_ANS_batch <- unlist(lapply(stat_list, function(x) x[[1]][[3]]))
+GMM_PCA_ANS_condition <- unlist(lapply(stat_list, function(x) x[[1]][[4]]))
+
+GMM_har_sam_O2_batch <- unlist(lapply(stat_list, function(x) x[[2]][[1]]))
+GMM_har_sam_O2_condition <- unlist(lapply(stat_list, function(x) x[[2]][[2]]))
+GMM_har_sam_ANS_batch <- unlist(lapply(stat_list, function(x) x[[2]][[3]]))
+GMM_har_sam_ANS_condition <- unlist(lapply(stat_list, function(x) x[[2]][[4]]))
+
+GMM_har_batch_O2_batch <- unlist(lapply(stat_list, function(x) x[[3]][[1]]))
+GMM_har_batch_O2_condition <- unlist(lapply(stat_list, function(x) x[[3]][[2]]))
+GMM_har_batch_ANS_batch <- unlist(lapply(stat_list, function(x) x[[3]][[3]]))
+GMM_har_batch_ANS_condition <- unlist(lapply(stat_list, function(x) x[[3]][[4]]))
+
+
+KNN_PCA_O2_batch <- unlist(lapply(stat_list, function(x) x[[4]][[1]]))
+KNN_PCA_O2_condition <- unlist(lapply(stat_list, function(x) x[[4]][[2]]))
+KNN_PCA_ANS_batch <- unlist(lapply(stat_list, function(x) x[[4]][[3]]))
+KNN_PCA_ANS_condition <- unlist(lapply(stat_list, function(x) x[[4]][[4]]))
+
+KNN_har_sam_O2_batch <- unlist(lapply(stat_list, function(x) x[[5]][[1]]))
+KNN_har_sam_O2_condition <- unlist(lapply(stat_list, function(x) x[[5]][[2]]))
+KNN_har_sam_ANS_batch <- unlist(lapply(stat_list, function(x) x[[5]][[3]]))
+KNN_har_sam_ANS_condition <- unlist(lapply(stat_list, function(x) x[[5]][[4]]))
+
+KNN_har_batch_O2_batch <- unlist(lapply(stat_list, function(x) x[[6]][[1]]))
+KNN_har_batch_O2_condition <- unlist(lapply(stat_list, function(x) x[[6]][[2]]))
+KNN_har_batch_ANS_batch <- unlist(lapply(stat_list, function(x) x[[6]][[3]]))
+KNN_har_batch_ANS_condition <- unlist(lapply(stat_list, function(x) x[[6]][[4]]))
+
+GMM_scvi_O2_batch <- unlist(lapply(stat_list, function(x) x[[7]][[1]]))
+GMM_scvi_O2_condition <- unlist(lapply(stat_list, function(x) x[[7]][[2]]))
+GMM_scvi_ANS_batch <- unlist(lapply(stat_list, function(x) x[[7]][[3]]))
+GMM_scvi_ANS_condition <- unlist(lapply(stat_list, function(x) x[[7]][[4]]))
+
+GMM_scvi_sam_O2_batch <- unlist(lapply(stat_list, function(x) x[[8]][[1]]))
+GMM_scvi_sam_O2_condition <- unlist(lapply(stat_list, function(x) x[[8]][[2]]))
+GMM_scvi_sam_ANS_batch <- unlist(lapply(stat_list, function(x) x[[8]][[3]]))
+GMM_scvi_sam_ANS_condition <- unlist(lapply(stat_list, function(x) x[[8]][[4]]))
+
+GMM_scvi_batch_O2_batch <- unlist(lapply(stat_list, function(x) x[[9]][[1]]))
+GMM_scvi_batch_O2_condition <- unlist(lapply(stat_list, function(x) x[[9]][[2]]))
+GMM_scvi_batch_ANS_batch <- unlist(lapply(stat_list, function(x) x[[9]][[3]]))
+GMM_scvi_batch_ANS_condition <- unlist(lapply(stat_list, function(x) x[[9]][[4]]))
+
+KNN_scvi_O2_batch <- unlist(lapply(stat_list, function(x) x[[10]][[1]]))
+KNN_scvi_O2_condition <- unlist(lapply(stat_list, function(x) x[[10]][[2]]))
+KNN_scvi_ANS_batch <- unlist(lapply(stat_list, function(x) x[[10]][[3]]))
+KNN_scvi_ANS_condition <- unlist(lapply(stat_list, function(x) x[[10]][[4]]))
+
+KNN_scvi_sam_O2_batch <- unlist(lapply(stat_list, function(x) x[[11]][[1]]))
+KNN_scvi_sam_O2_condition <- unlist(lapply(stat_list, function(x) x[[11]][[2]]))
+KNN_scvi_sam_ANS_batch <- unlist(lapply(stat_list, function(x) x[[11]][[3]]))
+KNN_scvi_sam_ANS_condition <- unlist(lapply(stat_list, function(x) x[[11]][[4]]))
+
+KNN_scvi_batch_O2_batch <- unlist(lapply(stat_list, function(x) x[[12]][[1]]))
+KNN_scvi_batch_O2_condition <- unlist(lapply(stat_list, function(x) x[[12]][[2]]))
+KNN_scvi_batch_ANS_batch <- unlist(lapply(stat_list, function(x) x[[12]][[3]]))
+KNN_scvi_batch_ANS_condition <- unlist(lapply(stat_list, function(x) x[[12]][[4]]))
+
+```
+
+```{r}
+GMM_PCA_O2_batch_qt <- quantile(GMM_PCA_O2_batch, c(0.025, 0.975))
+GMM_PCA_O2_condition_qt <- quantile(GMM_PCA_O2_condition, c(0.025, 0.975))
+GMM_PCA_ANS_batch_qt <- quantile(GMM_PCA_ANS_batch, c(0.025, 0.975))
+GMM_PCA_ANS_condition_qt <- quantile(GMM_PCA_ANS_condition, c(0.025, 0.975))
+GMM_har_sam_O2_batch_qt <- quantile(GMM_har_sam_O2_batch, c(0.025, 0.975))
+GMM_har_sam_O2_condition_qt <- quantile(GMM_har_sam_O2_condition, c(0.025, 0.975))
+GMM_har_sam_ANS_batch_qt <- quantile(GMM_har_sam_ANS_batch, c(0.025, 0.975))
+GMM_har_sam_ANS_condition_qt <- quantile(GMM_har_sam_ANS_condition, c(0.025, 0.975))
+GMM_har_batch_O2_batch_qt <- quantile(GMM_har_batch_O2_batch, c(0.025, 0.975))
+GMM_har_batch_O2_condition_qt <- quantile(GMM_har_batch_O2_condition, c(0.025, 0.975))
+GMM_har_batch_ANS_batch_qt <- quantile(GMM_har_batch_ANS_batch, c(0.025, 0.975))
+GMM_har_batch_ANS_condition_qt <- quantile(GMM_har_batch_ANS_condition, c(0.025, 0.975))
+
+KNN_PCA_O2_batch_qt <- quantile(KNN_PCA_O2_batch, c(0.025, 0.975))
+KNN_PCA_O2_condition_qt <- quantile(KNN_PCA_O2_condition, c(0.025, 0.975))
+KNN_PCA_ANS_batch_qt <- quantile(KNN_PCA_ANS_batch, c(0.025, 0.975))
+KNN_PCA_ANS_condition_qt <- quantile(KNN_PCA_ANS_condition, c(0.025, 0.975))
+KNN_har_sam_O2_batch_qt <- quantile(KNN_har_sam_O2_batch, c(0.025, 0.975))
+KNN_har_sam_O2_condition_qt <- quantile(KNN_har_sam_O2_condition, c(0.025, 0.975))
+KNN_har_sam_ANS_batch_qt <- quantile(KNN_har_sam_ANS_batch, c(0.025, 0.975))
+KNN_har_sam_ANS_condition_qt <- quantile(KNN_har_sam_ANS_condition, c(0.025, 0.975))
+KNN_har_batch_O2_batch_qt <- quantile(KNN_har_batch_O2_batch, c(0.025, 0.975))
+KNN_har_batch_O2_condition_qt <- quantile(KNN_har_batch_O2_condition, c(0.025, 0.975))
+KNN_har_batch_ANS_batch_qt <- quantile(KNN_har_batch_ANS_batch, c(0.025, 0.975))
+KNN_har_batch_ANS_condition_qt <- quantile(KNN_har_batch_ANS_condition, c(0.025, 0.975))
+
+
+GMM_scvi_O2_batch_qt <- quantile(GMM_scvi_O2_batch, c(0.025, 0.975))
+GMM_scvi_O2_condition_qt <- quantile(GMM_scvi_O2_condition, c(0.025, 0.975))
+GMM_scvi_ANS_batch_qt <- quantile(GMM_scvi_ANS_batch, c(0.025, 0.975))
+GMM_scvi_ANS_condition_qt <- quantile(GMM_scvi_ANS_condition, c(0.025, 0.975))
+GMM_scvi_sam_O2_batch_qt <- quantile(GMM_scvi_sam_O2_batch, c(0.025, 0.975))
+GMM_scvi_sam_O2_condition_qt <- quantile(GMM_scvi_sam_O2_condition, c(0.025, 0.975))
+GMM_scvi_sam_ANS_batch_qt <- quantile(GMM_scvi_sam_ANS_batch, c(0.025, 0.975))
+GMM_scvi_sam_ANS_condition_qt <- quantile(GMM_scvi_sam_ANS_condition, c(0.025, 0.975))
+GMM_scvi_batch_O2_batch_qt <- quantile(GMM_scvi_batch_O2_batch, c(0.025, 0.975))
+GMM_scvi_batch_O2_condition_qt <- quantile(GMM_scvi_batch_O2_condition, c(0.025, 0.975))
+GMM_scvi_batch_ANS_batch_qt <- quantile(GMM_scvi_batch_ANS_batch, c(0.025, 0.975))
+GMM_scvi_batch_ANS_condition_qt <- quantile(GMM_scvi_batch_ANS_condition, c(0.025, 0.975))
+
+KNN_scvi_O2_batch_qt <- quantile(KNN_scvi_O2_batch, c(0.025, 0.975))
+KNN_scvi_O2_condition_qt <- quantile(KNN_scvi_O2_condition, c(0.025, 0.975))
+KNN_scvi_ANS_batch_qt <- quantile(KNN_scvi_ANS_batch, c(0.025, 0.975))
+KNN_scvi_ANS_condition_qt <- quantile(KNN_scvi_ANS_condition, c(0.025, 0.975))
+KNN_scvi_sam_O2_batch_qt <- quantile(KNN_scvi_sam_O2_batch, c(0.025, 0.975))
+KNN_scvi_sam_O2_condition_qt <- quantile(KNN_scvi_sam_O2_condition, c(0.025, 0.975))
+KNN_scvi_sam_ANS_batch_qt <- quantile(KNN_scvi_sam_ANS_batch, c(0.025, 0.975))
+KNN_scvi_sam_ANS_condition_qt <- quantile(KNN_scvi_sam_ANS_condition, c(0.025, 0.975))
+KNN_scvi_batch_O2_batch_qt <- quantile(KNN_scvi_batch_O2_batch, c(0.025, 0.975))
+KNN_scvi_batch_O2_condition_qt <- quantile(KNN_scvi_batch_O2_condition, c(0.025, 0.975))
+KNN_scvi_batch_ANS_batch_qt <- quantile(KNN_scvi_batch_ANS_batch, c(0.025, 0.975))
+KNN_scvi_batch_ANS_condition_qt <- quantile(KNN_scvi_batch_ANS_condition, c(0.025, 0.975))
+
+O2_qt <- data.frame(matrix(c(GMM_PCA_O2_batch_qt,GMM_PCA_O2_condition_qt,
+           GMM_scvi_O2_batch_qt,GMM_scvi_O2_condition_qt,
+           KNN_PCA_O2_batch_qt,KNN_PCA_O2_condition_qt,
+           KNN_scvi_O2_batch_qt,KNN_scvi_O2_condition_qt,
+           GMM_har_sam_O2_batch_qt,GMM_har_sam_O2_condition_qt,
+           GMM_scvi_sam_O2_batch_qt,GMM_scvi_sam_O2_condition_qt,
+           KNN_har_sam_O2_batch_qt,KNN_har_sam_O2_condition_qt,
+           KNN_scvi_sam_O2_batch_qt,KNN_scvi_sam_O2_condition_qt,
+           GMM_har_batch_O2_batch_qt,GMM_har_batch_O2_condition_qt,
+           GMM_scvi_batch_O2_batch_qt,GMM_scvi_batch_O2_condition_qt,
+           KNN_har_batch_O2_batch_qt,KNN_har_batch_O2_condition_qt,
+           KNN_scvi_batch_O2_batch_qt,KNN_scvi_batch_O2_condition_qt), ncol = 2, byrow = T))
+
+
+R_qt <- data.frame(matrix(c(GMM_PCA_ANS_batch_qt,GMM_PCA_ANS_condition_qt,
+           GMM_scvi_ANS_batch_qt,GMM_scvi_ANS_condition_qt,
+           KNN_PCA_ANS_batch_qt,KNN_PCA_ANS_condition_qt,
+           KNN_scvi_ANS_batch_qt,KNN_scvi_ANS_condition_qt,
+           GMM_har_sam_ANS_batch_qt,GMM_har_sam_ANS_condition_qt,
+           GMM_scvi_sam_ANS_batch_qt,GMM_scvi_sam_ANS_condition_qt,
+           KNN_har_sam_ANS_batch_qt,KNN_har_sam_ANS_condition_qt,
+           KNN_scvi_sam_ANS_batch_qt,KNN_scvi_sam_ANS_condition_qt,
+           GMM_har_batch_ANS_batch_qt,GMM_har_batch_ANS_condition_qt,
+           GMM_scvi_batch_ANS_batch_qt,GMM_scvi_batch_ANS_condition_qt,
+           KNN_har_batch_ANS_batch_qt,KNN_har_batch_ANS_condition_qt,
+           KNN_scvi_batch_ANS_batch_qt,KNN_scvi_batch_ANS_condition_qt), ncol = 2, byrow = T))
+
+colnames(O2_qt) = colnames(R_qt) = c("Low.qt", "High.qt")
+
+```
+
+
+
+```{r}
+GMM_PCA_O2_batch_sd <- sd(GMM_PCA_O2_batch)
+GMM_PCA_O2_condition_sd <- sd(GMM_PCA_O2_condition)
+GMM_PCA_ANS_batch_sd <- sd(GMM_PCA_ANS_batch)
+GMM_PCA_ANS_condition_sd <- sd(GMM_PCA_ANS_condition)
+GMM_har_sam_O2_batch_sd <- sd(GMM_har_sam_O2_batch)
+GMM_har_sam_O2_condition_sd <- sd(GMM_har_sam_O2_condition)
+GMM_har_sam_ANS_batch_sd <- sd(GMM_har_sam_ANS_batch)
+GMM_har_sam_ANS_condition_sd <- sd(GMM_har_sam_ANS_condition)
+GMM_har_batch_O2_batch_sd <- sd(GMM_har_batch_O2_batch)
+GMM_har_batch_O2_condition_sd <- sd(GMM_har_batch_O2_condition)
+GMM_har_batch_ANS_batch_sd <- sd(GMM_har_batch_ANS_batch)
+GMM_har_batch_ANS_condition_sd <- sd(GMM_har_batch_ANS_condition)
+
+KNN_PCA_O2_batch_sd <- sd(KNN_PCA_O2_batch)
+KNN_PCA_O2_condition_sd <- sd(KNN_PCA_O2_condition)
+KNN_PCA_ANS_batch_sd <- sd(KNN_PCA_ANS_batch)
+KNN_PCA_ANS_condition_sd <- sd(KNN_PCA_ANS_condition)
+KNN_har_sam_O2_batch_sd <- sd(KNN_har_sam_O2_batch)
+KNN_har_sam_O2_condition_sd <- sd(KNN_har_sam_O2_condition)
+KNN_har_sam_ANS_batch_sd <- sd(KNN_har_sam_ANS_batch)
+KNN_har_sam_ANS_condition_sd <- sd(KNN_har_sam_ANS_condition)
+KNN_har_batch_O2_batch_sd <- sd(KNN_har_batch_O2_batch)
+KNN_har_batch_O2_condition_sd <- sd(KNN_har_batch_O2_condition)
+KNN_har_batch_ANS_batch_sd <- sd(KNN_har_batch_ANS_batch)
+KNN_har_batch_ANS_condition_sd <- sd(KNN_har_batch_ANS_condition)
+
+
+GMM_scvi_O2_batch_sd <- sd(GMM_scvi_O2_batch)
+GMM_scvi_O2_condition_sd <- sd(GMM_scvi_O2_condition)
+GMM_scvi_ANS_batch_sd <- sd(GMM_scvi_ANS_batch)
+GMM_scvi_ANS_condition_sd <- sd(GMM_scvi_ANS_condition)
+GMM_scvi_sam_O2_batch_sd <- sd(GMM_scvi_sam_O2_batch)
+GMM_scvi_sam_O2_condition_sd <- sd(GMM_scvi_sam_O2_condition)
+GMM_scvi_sam_ANS_batch_sd <- sd(GMM_scvi_sam_ANS_batch)
+GMM_scvi_sam_ANS_condition_sd <- sd(GMM_scvi_sam_ANS_condition)
+GMM_scvi_batch_O2_batch_sd <- sd(GMM_scvi_batch_O2_batch)
+GMM_scvi_batch_O2_condition_sd <- sd(GMM_scvi_batch_O2_condition)
+GMM_scvi_batch_ANS_batch_sd <- sd(GMM_scvi_batch_ANS_batch)
+GMM_scvi_batch_ANS_condition_sd <- sd(GMM_scvi_batch_ANS_condition)
+
+KNN_scvi_O2_batch_sd <- sd(KNN_scvi_O2_batch)
+KNN_scvi_O2_condition_sd <- sd(KNN_scvi_O2_condition)
+KNN_scvi_ANS_batch_sd <- sd(KNN_scvi_ANS_batch)
+KNN_scvi_ANS_condition_sd <- sd(KNN_scvi_ANS_condition)
+KNN_scvi_sam_O2_batch_sd <- sd(KNN_scvi_sam_O2_batch)
+KNN_scvi_sam_O2_condition_sd <- sd(KNN_scvi_sam_O2_condition)
+KNN_scvi_sam_ANS_batch_sd <- sd(KNN_scvi_sam_ANS_batch)
+KNN_scvi_sam_ANS_condition_sd <- sd(KNN_scvi_sam_ANS_condition)
+KNN_scvi_batch_O2_batch_sd <- sd(KNN_scvi_batch_O2_batch)
+KNN_scvi_batch_O2_condition_sd <- sd(KNN_scvi_batch_O2_condition)
+KNN_scvi_batch_ANS_batch_sd <- sd(KNN_scvi_batch_ANS_batch)
+KNN_scvi_batch_ANS_condition_sd <- sd(KNN_scvi_batch_ANS_condition)
+
+O2_sd <- c(GMM_PCA_O2_batch_sd,GMM_PCA_O2_condition_sd,
+           GMM_scvi_O2_batch_sd,GMM_scvi_O2_condition_sd,
+           KNN_PCA_O2_batch_sd,KNN_PCA_O2_condition_sd,
+           KNN_scvi_O2_batch_sd,KNN_scvi_O2_condition_sd,
+           GMM_har_sam_O2_batch_sd,GMM_har_sam_O2_condition_sd,
+           GMM_scvi_sam_O2_batch_sd,GMM_scvi_sam_O2_condition_sd,
+           KNN_har_sam_O2_batch_sd,KNN_har_sam_O2_condition_sd,
+           KNN_scvi_sam_O2_batch_sd,KNN_scvi_sam_O2_condition_sd,
+           GMM_har_batch_O2_batch_sd,GMM_har_batch_O2_condition_sd,
+           GMM_scvi_batch_O2_batch_sd,GMM_scvi_batch_O2_condition_sd,
+           KNN_har_batch_O2_batch_sd,KNN_har_batch_O2_condition_sd,
+           KNN_scvi_batch_O2_batch_sd,KNN_scvi_batch_O2_condition_sd)
+
+
+R_sd <- c(GMM_PCA_ANS_batch_sd,GMM_PCA_ANS_condition_sd,
+           GMM_scvi_ANS_batch_sd,GMM_scvi_ANS_condition_sd,
+           KNN_PCA_ANS_batch_sd,KNN_PCA_ANS_condition_sd,
+           KNN_scvi_ANS_batch_sd,KNN_scvi_ANS_condition_sd,
+           GMM_har_sam_ANS_batch_sd,GMM_har_sam_ANS_condition_sd,
+           GMM_scvi_sam_ANS_batch_sd,GMM_scvi_sam_ANS_condition_sd,
+           KNN_har_sam_ANS_batch_sd,KNN_har_sam_ANS_condition_sd,
+           KNN_scvi_sam_ANS_batch_sd,KNN_scvi_sam_ANS_condition_sd,
+           GMM_har_batch_ANS_batch_sd,GMM_har_batch_ANS_condition_sd,
+           GMM_scvi_batch_ANS_batch_sd,GMM_scvi_batch_ANS_condition_sd,
+           KNN_har_batch_ANS_batch_sd,KNN_har_batch_ANS_condition_sd,
+           KNN_scvi_batch_ANS_batch_sd,KNN_scvi_batch_ANS_condition_sd)
+
+
+```
+
+```{r}
+O2_summary <- data.frame(O2_data, data = "COVID143",sd = O2_sd, O2_qt)
+R_summary <- data.frame(R_data, data = "COVID143", sd = R_sd, R_qt)
+
+#save(O2_summary, R_summary, file = "../../results/BatchStudy/COVID143_stat_summary.Rda")
+```
+
+```{r}
+ggplot(O2_summary[O2_summary$data == "COVID143",], aes(x = DimReduc, y = Value, group = comb))+
+  geom_point(aes(col = Correction))+
+  geom_line(aes(linetype  = Dens, col = Correction)) +
+    scale_color_manual(values= safe_colorblind_palette)+
+    geom_errorbar(aes(ymin =Low.qt, ymax = High.qt, col = Correction, linetype = Dens))+
+  theme_bw() +
+  facet_grid(Correction~Group+Dens)+
+  ylab("O2 Value")+
+      theme(axis.text.x = element_text(angle = 30, hjust=1))+
+  ggtitle("COVID PBMC data")
+```
+```{r}
+ggplot(R_summary[R_summary$data == "COVID143",], aes(x = DimReduc, y = Value, group = comb))+
+  geom_point(aes(col = Correction))+
+  geom_line(aes(linetype  = Dens, col = Correction)) +
+    scale_color_manual(values= safe_colorblind_palette)+
+    geom_errorbar(aes(ymin =Low.qt, ymax = High.qt, col = Correction, linetype = Dens))+
+  theme_bw() +
+  facet_grid(Correction~Group+Dens)+
+  ylab("R Value")+
+      theme(axis.text.x = element_text(angle = 30, hjust=1))+
+  ggtitle("COVID PBMC data")
+```
+
+
+## Perez2022
+
+```{r}
+load("../../results/BatchStudy/Perez2022_stat.Rda")
+load("../../results/BatchStudy/Perez2022_BSdist.Rda")
+
+```
+
+```{r}
+GMM_PCA_O2_batch <- unlist(lapply(stat_list, function(x) x[[1]][[1]]))
+GMM_PCA_O2_condition <- unlist(lapply(stat_list, function(x) x[[1]][[2]]))
+GMM_PCA_ANS_batch <- unlist(lapply(stat_list, function(x) x[[1]][[3]]))
+GMM_PCA_ANS_condition <- unlist(lapply(stat_list, function(x) x[[1]][[4]]))
+
+GMM_har_sam_O2_batch <- unlist(lapply(stat_list, function(x) x[[2]][[1]]))
+GMM_har_sam_O2_condition <- unlist(lapply(stat_list, function(x) x[[2]][[2]]))
+GMM_har_sam_ANS_batch <- unlist(lapply(stat_list, function(x) x[[2]][[3]]))
+GMM_har_sam_ANS_condition <- unlist(lapply(stat_list, function(x) x[[2]][[4]]))
+
+GMM_har_batch_O2_batch <- unlist(lapply(stat_list, function(x) x[[3]][[1]]))
+GMM_har_batch_O2_condition <- unlist(lapply(stat_list, function(x) x[[3]][[2]]))
+GMM_har_batch_ANS_batch <- unlist(lapply(stat_list, function(x) x[[3]][[3]]))
+GMM_har_batch_ANS_condition <- unlist(lapply(stat_list, function(x) x[[3]][[4]]))
+
+
+KNN_PCA_O2_batch <- unlist(lapply(stat_list, function(x) x[[4]][[1]]))
+KNN_PCA_O2_condition <- unlist(lapply(stat_list, function(x) x[[4]][[2]]))
+KNN_PCA_ANS_batch <- unlist(lapply(stat_list, function(x) x[[4]][[3]]))
+KNN_PCA_ANS_condition <- unlist(lapply(stat_list, function(x) x[[4]][[4]]))
+
+KNN_har_sam_O2_batch <- unlist(lapply(stat_list, function(x) x[[5]][[1]]))
+KNN_har_sam_O2_condition <- unlist(lapply(stat_list, function(x) x[[5]][[2]]))
+KNN_har_sam_ANS_batch <- unlist(lapply(stat_list, function(x) x[[5]][[3]]))
+KNN_har_sam_ANS_condition <- unlist(lapply(stat_list, function(x) x[[5]][[4]]))
+
+KNN_har_batch_O2_batch <- unlist(lapply(stat_list, function(x) x[[6]][[1]]))
+KNN_har_batch_O2_condition <- unlist(lapply(stat_list, function(x) x[[6]][[2]]))
+KNN_har_batch_ANS_batch <- unlist(lapply(stat_list, function(x) x[[6]][[3]]))
+KNN_har_batch_ANS_condition <- unlist(lapply(stat_list, function(x) x[[6]][[4]]))
+
+GMM_scvi_O2_batch <- unlist(lapply(stat_list, function(x) x[[7]][[1]]))
+GMM_scvi_O2_condition <- unlist(lapply(stat_list, function(x) x[[7]][[2]]))
+GMM_scvi_ANS_batch <- unlist(lapply(stat_list, function(x) x[[7]][[3]]))
+GMM_scvi_ANS_condition <- unlist(lapply(stat_list, function(x) x[[7]][[4]]))
+
+GMM_scvi_sam_O2_batch <- unlist(lapply(stat_list, function(x) x[[8]][[1]]))
+GMM_scvi_sam_O2_condition <- unlist(lapply(stat_list, function(x) x[[8]][[2]]))
+GMM_scvi_sam_ANS_batch <- unlist(lapply(stat_list, function(x) x[[8]][[3]]))
+GMM_scvi_sam_ANS_condition <- unlist(lapply(stat_list, function(x) x[[8]][[4]]))
+
+GMM_scvi_batch_O2_batch <- unlist(lapply(stat_list, function(x) x[[9]][[1]]))
+GMM_scvi_batch_O2_condition <- unlist(lapply(stat_list, function(x) x[[9]][[2]]))
+GMM_scvi_batch_ANS_batch <- unlist(lapply(stat_list, function(x) x[[9]][[3]]))
+GMM_scvi_batch_ANS_condition <- unlist(lapply(stat_list, function(x) x[[9]][[4]]))
+
+KNN_scvi_O2_batch <- unlist(lapply(stat_list, function(x) x[[10]][[1]]))
+KNN_scvi_O2_condition <- unlist(lapply(stat_list, function(x) x[[10]][[2]]))
+KNN_scvi_ANS_batch <- unlist(lapply(stat_list, function(x) x[[10]][[3]]))
+KNN_scvi_ANS_condition <- unlist(lapply(stat_list, function(x) x[[10]][[4]]))
+
+KNN_scvi_sam_O2_batch <- unlist(lapply(stat_list, function(x) x[[11]][[1]]))
+KNN_scvi_sam_O2_condition <- unlist(lapply(stat_list, function(x) x[[11]][[2]]))
+KNN_scvi_sam_ANS_batch <- unlist(lapply(stat_list, function(x) x[[11]][[3]]))
+KNN_scvi_sam_ANS_condition <- unlist(lapply(stat_list, function(x) x[[11]][[4]]))
+
+KNN_scvi_batch_O2_batch <- unlist(lapply(stat_list, function(x) x[[12]][[1]]))
+KNN_scvi_batch_O2_condition <- unlist(lapply(stat_list, function(x) x[[12]][[2]]))
+KNN_scvi_batch_ANS_batch <- unlist(lapply(stat_list, function(x) x[[12]][[3]]))
+KNN_scvi_batch_ANS_condition <- unlist(lapply(stat_list, function(x) x[[12]][[4]]))
+
+```
+
+```{r}
+GMM_PCA_O2_batch_qt <- quantile(GMM_PCA_O2_batch, c(0.025, 0.975))
+GMM_PCA_O2_condition_qt <- quantile(GMM_PCA_O2_condition, c(0.025, 0.975))
+GMM_PCA_ANS_batch_qt <- quantile(GMM_PCA_ANS_batch, c(0.025, 0.975))
+GMM_PCA_ANS_condition_qt <- quantile(GMM_PCA_ANS_condition, c(0.025, 0.975))
+GMM_har_sam_O2_batch_qt <- quantile(GMM_har_sam_O2_batch, c(0.025, 0.975))
+GMM_har_sam_O2_condition_qt <- quantile(GMM_har_sam_O2_condition, c(0.025, 0.975))
+GMM_har_sam_ANS_batch_qt <- quantile(GMM_har_sam_ANS_batch, c(0.025, 0.975))
+GMM_har_sam_ANS_condition_qt <- quantile(GMM_har_sam_ANS_condition, c(0.025, 0.975))
+GMM_har_batch_O2_batch_qt <- quantile(GMM_har_batch_O2_batch, c(0.025, 0.975))
+GMM_har_batch_O2_condition_qt <- quantile(GMM_har_batch_O2_condition, c(0.025, 0.975))
+GMM_har_batch_ANS_batch_qt <- quantile(GMM_har_batch_ANS_batch, c(0.025, 0.975))
+GMM_har_batch_ANS_condition_qt <- quantile(GMM_har_batch_ANS_condition, c(0.025, 0.975))
+
+KNN_PCA_O2_batch_qt <- quantile(KNN_PCA_O2_batch, c(0.025, 0.975))
+KNN_PCA_O2_condition_qt <- quantile(KNN_PCA_O2_condition, c(0.025, 0.975))
+KNN_PCA_ANS_batch_qt <- quantile(KNN_PCA_ANS_batch, c(0.025, 0.975))
+KNN_PCA_ANS_condition_qt <- quantile(KNN_PCA_ANS_condition, c(0.025, 0.975))
+KNN_har_sam_O2_batch_qt <- quantile(KNN_har_sam_O2_batch, c(0.025, 0.975))
+KNN_har_sam_O2_condition_qt <- quantile(KNN_har_sam_O2_condition, c(0.025, 0.975))
+KNN_har_sam_ANS_batch_qt <- quantile(KNN_har_sam_ANS_batch, c(0.025, 0.975))
+KNN_har_sam_ANS_condition_qt <- quantile(KNN_har_sam_ANS_condition, c(0.025, 0.975))
+KNN_har_batch_O2_batch_qt <- quantile(KNN_har_batch_O2_batch, c(0.025, 0.975))
+KNN_har_batch_O2_condition_qt <- quantile(KNN_har_batch_O2_condition, c(0.025, 0.975))
+KNN_har_batch_ANS_batch_qt <- quantile(KNN_har_batch_ANS_batch, c(0.025, 0.975))
+KNN_har_batch_ANS_condition_qt <- quantile(KNN_har_batch_ANS_condition, c(0.025, 0.975))
+
+
+GMM_scvi_O2_batch_qt <- quantile(GMM_scvi_O2_batch, c(0.025, 0.975))
+GMM_scvi_O2_condition_qt <- quantile(GMM_scvi_O2_condition, c(0.025, 0.975))
+GMM_scvi_ANS_batch_qt <- quantile(GMM_scvi_ANS_batch, c(0.025, 0.975))
+GMM_scvi_ANS_condition_qt <- quantile(GMM_scvi_ANS_condition, c(0.025, 0.975))
+GMM_scvi_sam_O2_batch_qt <- quantile(GMM_scvi_sam_O2_batch, c(0.025, 0.975))
+GMM_scvi_sam_O2_condition_qt <- quantile(GMM_scvi_sam_O2_condition, c(0.025, 0.975))
+GMM_scvi_sam_ANS_batch_qt <- quantile(GMM_scvi_sam_ANS_batch, c(0.025, 0.975))
+GMM_scvi_sam_ANS_condition_qt <- quantile(GMM_scvi_sam_ANS_condition, c(0.025, 0.975))
+GMM_scvi_batch_O2_batch_qt <- quantile(GMM_scvi_batch_O2_batch, c(0.025, 0.975))
+GMM_scvi_batch_O2_condition_qt <- quantile(GMM_scvi_batch_O2_condition, c(0.025, 0.975))
+GMM_scvi_batch_ANS_batch_qt <- quantile(GMM_scvi_batch_ANS_batch, c(0.025, 0.975))
+GMM_scvi_batch_ANS_condition_qt <- quantile(GMM_scvi_batch_ANS_condition, c(0.025, 0.975))
+
+KNN_scvi_O2_batch_qt <- quantile(KNN_scvi_O2_batch, c(0.025, 0.975))
+KNN_scvi_O2_condition_qt <- quantile(KNN_scvi_O2_condition, c(0.025, 0.975))
+KNN_scvi_ANS_batch_qt <- quantile(KNN_scvi_ANS_batch, c(0.025, 0.975))
+KNN_scvi_ANS_condition_qt <- quantile(KNN_scvi_ANS_condition, c(0.025, 0.975))
+KNN_scvi_sam_O2_batch_qt <- quantile(KNN_scvi_sam_O2_batch, c(0.025, 0.975))
+KNN_scvi_sam_O2_condition_qt <- quantile(KNN_scvi_sam_O2_condition, c(0.025, 0.975))
+KNN_scvi_sam_ANS_batch_qt <- quantile(KNN_scvi_sam_ANS_batch, c(0.025, 0.975))
+KNN_scvi_sam_ANS_condition_qt <- quantile(KNN_scvi_sam_ANS_condition, c(0.025, 0.975))
+KNN_scvi_batch_O2_batch_qt <- quantile(KNN_scvi_batch_O2_batch, c(0.025, 0.975))
+KNN_scvi_batch_O2_condition_qt <- quantile(KNN_scvi_batch_O2_condition, c(0.025, 0.975))
+KNN_scvi_batch_ANS_batch_qt <- quantile(KNN_scvi_batch_ANS_batch, c(0.025, 0.975))
+KNN_scvi_batch_ANS_condition_qt <- quantile(KNN_scvi_batch_ANS_condition, c(0.025, 0.975))
+
+O2_qt <- data.frame(matrix(c(GMM_PCA_O2_batch_qt,GMM_PCA_O2_condition_qt,
+           GMM_scvi_O2_batch_qt,GMM_scvi_O2_condition_qt,
+           KNN_PCA_O2_batch_qt,KNN_PCA_O2_condition_qt,
+           KNN_scvi_O2_batch_qt,KNN_scvi_O2_condition_qt,
+           GMM_har_sam_O2_batch_qt,GMM_har_sam_O2_condition_qt,
+           GMM_scvi_sam_O2_batch_qt,GMM_scvi_sam_O2_condition_qt,
+           KNN_har_sam_O2_batch_qt,KNN_har_sam_O2_condition_qt,
+           KNN_scvi_sam_O2_batch_qt,KNN_scvi_sam_O2_condition_qt,
+           GMM_har_batch_O2_batch_qt,GMM_har_batch_O2_condition_qt,
+           GMM_scvi_batch_O2_batch_qt,GMM_scvi_batch_O2_condition_qt,
+           KNN_har_batch_O2_batch_qt,KNN_har_batch_O2_condition_qt,
+           KNN_scvi_batch_O2_batch_qt,KNN_scvi_batch_O2_condition_qt), ncol = 2, byrow = T))
+
+
+R_qt <- data.frame(matrix(c(GMM_PCA_ANS_batch_qt,GMM_PCA_ANS_condition_qt,
+           GMM_scvi_ANS_batch_qt,GMM_scvi_ANS_condition_qt,
+           KNN_PCA_ANS_batch_qt,KNN_PCA_ANS_condition_qt,
+           KNN_scvi_ANS_batch_qt,KNN_scvi_ANS_condition_qt,
+           GMM_har_sam_ANS_batch_qt,GMM_har_sam_ANS_condition_qt,
+           GMM_scvi_sam_ANS_batch_qt,GMM_scvi_sam_ANS_condition_qt,
+           KNN_har_sam_ANS_batch_qt,KNN_har_sam_ANS_condition_qt,
+           KNN_scvi_sam_ANS_batch_qt,KNN_scvi_sam_ANS_condition_qt,
+           GMM_har_batch_ANS_batch_qt,GMM_har_batch_ANS_condition_qt,
+           GMM_scvi_batch_ANS_batch_qt,GMM_scvi_batch_ANS_condition_qt,
+           KNN_har_batch_ANS_batch_qt,KNN_har_batch_ANS_condition_qt,
+           KNN_scvi_batch_ANS_batch_qt,KNN_scvi_batch_ANS_condition_qt), ncol = 2, byrow = T))
+
+colnames(O2_qt) = colnames(R_qt) = c("Low.qt", "High.qt")
+
+```
+
+
+```{r}
+GMM_PCA_O2_batch_sd <- sd(GMM_PCA_O2_batch)
+GMM_PCA_O2_condition_sd <- sd(GMM_PCA_O2_condition)
+GMM_PCA_ANS_batch_sd <- sd(GMM_PCA_ANS_batch)
+GMM_PCA_ANS_condition_sd <- sd(GMM_PCA_ANS_condition)
+GMM_har_sam_O2_batch_sd <- sd(GMM_har_sam_O2_batch)
+GMM_har_sam_O2_condition_sd <- sd(GMM_har_sam_O2_condition)
+GMM_har_sam_ANS_batch_sd <- sd(GMM_har_sam_ANS_batch)
+GMM_har_sam_ANS_condition_sd <- sd(GMM_har_sam_ANS_condition)
+GMM_har_batch_O2_batch_sd <- sd(GMM_har_batch_O2_batch)
+GMM_har_batch_O2_condition_sd <- sd(GMM_har_batch_O2_condition)
+GMM_har_batch_ANS_batch_sd <- sd(GMM_har_batch_ANS_batch)
+GMM_har_batch_ANS_condition_sd <- sd(GMM_har_batch_ANS_condition)
+
+KNN_PCA_O2_batch_sd <- sd(KNN_PCA_O2_batch)
+KNN_PCA_O2_condition_sd <- sd(KNN_PCA_O2_condition)
+KNN_PCA_ANS_batch_sd <- sd(KNN_PCA_ANS_batch)
+KNN_PCA_ANS_condition_sd <- sd(KNN_PCA_ANS_condition)
+KNN_har_sam_O2_batch_sd <- sd(KNN_har_sam_O2_batch)
+KNN_har_sam_O2_condition_sd <- sd(KNN_har_sam_O2_condition)
+KNN_har_sam_ANS_batch_sd <- sd(KNN_har_sam_ANS_batch)
+KNN_har_sam_ANS_condition_sd <- sd(KNN_har_sam_ANS_condition)
+KNN_har_batch_O2_batch_sd <- sd(KNN_har_batch_O2_batch)
+KNN_har_batch_O2_condition_sd <- sd(KNN_har_batch_O2_condition)
+KNN_har_batch_ANS_batch_sd <- sd(KNN_har_batch_ANS_batch)
+KNN_har_batch_ANS_condition_sd <- sd(KNN_har_batch_ANS_condition)
+
+
+GMM_scvi_O2_batch_sd <- sd(GMM_scvi_O2_batch)
+GMM_scvi_O2_condition_sd <- sd(GMM_scvi_O2_condition)
+GMM_scvi_ANS_batch_sd <- sd(GMM_scvi_ANS_batch)
+GMM_scvi_ANS_condition_sd <- sd(GMM_scvi_ANS_condition)
+GMM_scvi_sam_O2_batch_sd <- sd(GMM_scvi_sam_O2_batch)
+GMM_scvi_sam_O2_condition_sd <- sd(GMM_scvi_sam_O2_condition)
+GMM_scvi_sam_ANS_batch_sd <- sd(GMM_scvi_sam_ANS_batch)
+GMM_scvi_sam_ANS_condition_sd <- sd(GMM_scvi_sam_ANS_condition)
+GMM_scvi_batch_O2_batch_sd <- sd(GMM_scvi_batch_O2_batch)
+GMM_scvi_batch_O2_condition_sd <- sd(GMM_scvi_batch_O2_condition)
+GMM_scvi_batch_ANS_batch_sd <- sd(GMM_scvi_batch_ANS_batch)
+GMM_scvi_batch_ANS_condition_sd <- sd(GMM_scvi_batch_ANS_condition)
+
+KNN_scvi_O2_batch_sd <- sd(KNN_scvi_O2_batch)
+KNN_scvi_O2_condition_sd <- sd(KNN_scvi_O2_condition)
+KNN_scvi_ANS_batch_sd <- sd(KNN_scvi_ANS_batch)
+KNN_scvi_ANS_condition_sd <- sd(KNN_scvi_ANS_condition)
+KNN_scvi_sam_O2_batch_sd <- sd(KNN_scvi_sam_O2_batch)
+KNN_scvi_sam_O2_condition_sd <- sd(KNN_scvi_sam_O2_condition)
+KNN_scvi_sam_ANS_batch_sd <- sd(KNN_scvi_sam_ANS_batch)
+KNN_scvi_sam_ANS_condition_sd <- sd(KNN_scvi_sam_ANS_condition)
+KNN_scvi_batch_O2_batch_sd <- sd(KNN_scvi_batch_O2_batch)
+KNN_scvi_batch_O2_condition_sd <- sd(KNN_scvi_batch_O2_condition)
+KNN_scvi_batch_ANS_batch_sd <- sd(KNN_scvi_batch_ANS_batch)
+KNN_scvi_batch_ANS_condition_sd <- sd(KNN_scvi_batch_ANS_condition)
+
+O2_sd <- c(GMM_PCA_O2_batch_sd,GMM_PCA_O2_condition_sd,
+           GMM_scvi_O2_batch_sd,GMM_scvi_O2_condition_sd,
+           KNN_PCA_O2_batch_sd,KNN_PCA_O2_condition_sd,
+           KNN_scvi_O2_batch_sd,KNN_scvi_O2_condition_sd,
+           GMM_har_sam_O2_batch_sd,GMM_har_sam_O2_condition_sd,
+           GMM_scvi_sam_O2_batch_sd,GMM_scvi_sam_O2_condition_sd,
+           KNN_har_sam_O2_batch_sd,KNN_har_sam_O2_condition_sd,
+           KNN_scvi_sam_O2_batch_sd,KNN_scvi_sam_O2_condition_sd,
+           GMM_har_batch_O2_batch_sd,GMM_har_batch_O2_condition_sd,
+           GMM_scvi_batch_O2_batch_sd,GMM_scvi_batch_O2_condition_sd,
+           KNN_har_batch_O2_batch_sd,KNN_har_batch_O2_condition_sd,
+           KNN_scvi_batch_O2_batch_sd,KNN_scvi_batch_O2_condition_sd)
+
+
+R_sd <- c(GMM_PCA_ANS_batch_sd,GMM_PCA_ANS_condition_sd,
+           GMM_scvi_ANS_batch_sd,GMM_scvi_ANS_condition_sd,
+           KNN_PCA_ANS_batch_sd,KNN_PCA_ANS_condition_sd,
+           KNN_scvi_ANS_batch_sd,KNN_scvi_ANS_condition_sd,
+           GMM_har_sam_ANS_batch_sd,GMM_har_sam_ANS_condition_sd,
+           GMM_scvi_sam_ANS_batch_sd,GMM_scvi_sam_ANS_condition_sd,
+           KNN_har_sam_ANS_batch_sd,KNN_har_sam_ANS_condition_sd,
+           KNN_scvi_sam_ANS_batch_sd,KNN_scvi_sam_ANS_condition_sd,
+           GMM_har_batch_ANS_batch_sd,GMM_har_batch_ANS_condition_sd,
+           GMM_scvi_batch_ANS_batch_sd,GMM_scvi_batch_ANS_condition_sd,
+           KNN_har_batch_ANS_batch_sd,KNN_har_batch_ANS_condition_sd,
+           KNN_scvi_batch_ANS_batch_sd,KNN_scvi_batch_ANS_condition_sd)
+
+
+```
+
+
+```{r}
+O2_summary <- data.frame(O2_data, data = "Perez2022",sd = O2_sd, O2_qt)
+R_summary <- data.frame(R_data, data = "Perez2022", sd = R_sd, R_qt)
+```
+
+
+```{r}
+ggplot(O2_summary[O2_summary$data == "Perez2022",], aes(x = DimReduc, y = Value, group = comb))+
+  geom_point(aes(col = Correction))+
+  geom_line(aes(linetype  = Dens, col = Correction)) +
+    scale_color_manual(values= safe_colorblind_palette)+
+    geom_errorbar(aes(ymin =Low.qt, ymax = High.qt, col = Correction, linetype = Dens))+
+  theme_bw() +
+  facet_grid(Correction~Group+Dens)+
+  ylab("O2 Value")+
+      theme(axis.text.x = element_text(angle = 30, hjust=1))+
+  ggtitle("Perez Lupus SLE data")
+```
+```{r}
+ggplot(R_summary[R_summary$data == "Perez2022",], aes(x = DimReduc, y = Value, group = comb))+
+  geom_point(aes(col = Correction))+
+  geom_line(aes(linetype  = Dens, col = Correction)) +
+    scale_color_manual(values= safe_colorblind_palette)+
+    geom_errorbar(aes(ymin =Low.qt, ymax = High.qt, col = Correction, linetype = Dens))+
+  theme_bw() +
+  facet_grid(Correction~Group+Dens)+
+  ylab("R Value")+
+      theme(axis.text.x = element_text(angle = 30, hjust=1))+
+  ggtitle("Perez Lupus SLE data")
+```
+```{r}
+save(R_summary, O2_summary, file = "../../results/BatchStudy/Perez2022_stat_summary_old.Rda")
+```
+
+
+
+## fabre
+
+```{r}
+load("../../results/BatchStudy/fabre_stat.Rda")
+
+
+load("../../results/BatchStudy/fabre_BSdist_stat.Rda")
+```
+
+
+```{r}
+GMM_PCA_O2_batch <- unlist(lapply(stat_list, function(x) x[[1]][[1]]))
+GMM_PCA_O2_condition <- unlist(lapply(stat_list, function(x) x[[1]][[2]]))
+GMM_PCA_ANS_batch <- unlist(lapply(stat_list, function(x) x[[1]][[3]]))
+GMM_PCA_ANS_condition <- unlist(lapply(stat_list, function(x) x[[1]][[4]]))
+
+GMM_har_sam_O2_batch <- unlist(lapply(stat_list, function(x) x[[2]][[1]]))
+GMM_har_sam_O2_condition <- unlist(lapply(stat_list, function(x) x[[2]][[2]]))
+GMM_har_sam_ANS_batch <- unlist(lapply(stat_list, function(x) x[[2]][[3]]))
+GMM_har_sam_ANS_condition <- unlist(lapply(stat_list, function(x) x[[2]][[4]]))
+
+GMM_har_batch_O2_batch <- unlist(lapply(stat_list, function(x) x[[3]][[1]]))
+GMM_har_batch_O2_condition <- unlist(lapply(stat_list, function(x) x[[3]][[2]]))
+GMM_har_batch_ANS_batch <- unlist(lapply(stat_list, function(x) x[[3]][[3]]))
+GMM_har_batch_ANS_condition <- unlist(lapply(stat_list, function(x) x[[3]][[4]]))
+
+
+KNN_PCA_O2_batch <- unlist(lapply(stat_list, function(x) x[[4]][[1]]))
+KNN_PCA_O2_condition <- unlist(lapply(stat_list, function(x) x[[4]][[2]]))
+KNN_PCA_ANS_batch <- unlist(lapply(stat_list, function(x) x[[4]][[3]]))
+KNN_PCA_ANS_condition <- unlist(lapply(stat_list, function(x) x[[4]][[4]]))
+
+KNN_har_sam_O2_batch <- unlist(lapply(stat_list, function(x) x[[5]][[1]]))
+KNN_har_sam_O2_condition <- unlist(lapply(stat_list, function(x) x[[5]][[2]]))
+KNN_har_sam_ANS_batch <- unlist(lapply(stat_list, function(x) x[[5]][[3]]))
+KNN_har_sam_ANS_condition <- unlist(lapply(stat_list, function(x) x[[5]][[4]]))
+
+KNN_har_batch_O2_batch <- unlist(lapply(stat_list, function(x) x[[6]][[1]]))
+KNN_har_batch_O2_condition <- unlist(lapply(stat_list, function(x) x[[6]][[2]]))
+KNN_har_batch_ANS_batch <- unlist(lapply(stat_list, function(x) x[[6]][[3]]))
+KNN_har_batch_ANS_condition <- unlist(lapply(stat_list, function(x) x[[6]][[4]]))
+
+
+
+```
+
+```{r}
+GMM_PCA_O2_batch_qt <- quantile(GMM_PCA_O2_batch, c(0.025, 0.975))
+GMM_PCA_O2_condition_qt <- quantile(GMM_PCA_O2_condition, c(0.025, 0.975))
+GMM_PCA_ANS_batch_qt <- quantile(GMM_PCA_ANS_batch, c(0.025, 0.975))
+GMM_PCA_ANS_condition_qt <- quantile(GMM_PCA_ANS_condition, c(0.025, 0.975))
+GMM_har_sam_O2_batch_qt <- quantile(GMM_har_sam_O2_batch, c(0.025, 0.975))
+GMM_har_sam_O2_condition_qt <- quantile(GMM_har_sam_O2_condition, c(0.025, 0.975))
+GMM_har_sam_ANS_batch_qt <- quantile(GMM_har_sam_ANS_batch, c(0.025, 0.975))
+GMM_har_sam_ANS_condition_qt <- quantile(GMM_har_sam_ANS_condition, c(0.025, 0.975))
+GMM_har_batch_O2_batch_qt <- quantile(GMM_har_batch_O2_batch, c(0.025, 0.975))
+GMM_har_batch_O2_condition_qt <- quantile(GMM_har_batch_O2_condition, c(0.025, 0.975))
+GMM_har_batch_ANS_batch_qt <- quantile(GMM_har_batch_ANS_batch, c(0.025, 0.975))
+GMM_har_batch_ANS_condition_qt <- quantile(GMM_har_batch_ANS_condition, c(0.025, 0.975))
+
+KNN_PCA_O2_batch_qt <- quantile(KNN_PCA_O2_batch, c(0.025, 0.975))
+KNN_PCA_O2_condition_qt <- quantile(KNN_PCA_O2_condition, c(0.025, 0.975))
+KNN_PCA_ANS_batch_qt <- quantile(KNN_PCA_ANS_batch, c(0.025, 0.975))
+KNN_PCA_ANS_condition_qt <- quantile(KNN_PCA_ANS_condition, c(0.025, 0.975))
+KNN_har_sam_O2_batch_qt <- quantile(KNN_har_sam_O2_batch, c(0.025, 0.975))
+KNN_har_sam_O2_condition_qt <- quantile(KNN_har_sam_O2_condition, c(0.025, 0.975))
+KNN_har_sam_ANS_batch_qt <- quantile(KNN_har_sam_ANS_batch, c(0.025, 0.975))
+KNN_har_sam_ANS_condition_qt <- quantile(KNN_har_sam_ANS_condition, c(0.025, 0.975))
+KNN_har_batch_O2_batch_qt <- quantile(KNN_har_batch_O2_batch, c(0.025, 0.975))
+KNN_har_batch_O2_condition_qt <- quantile(KNN_har_batch_O2_condition, c(0.025, 0.975))
+KNN_har_batch_ANS_batch_qt <- quantile(KNN_har_batch_ANS_batch, c(0.025, 0.975))
+KNN_har_batch_ANS_condition_qt <- quantile(KNN_har_batch_ANS_condition, c(0.025, 0.975))
+
+
+
+O2_qt <- data.frame(matrix(c(GMM_PCA_O2_batch_qt,GMM_PCA_O2_condition_qt,
+           KNN_PCA_O2_batch_qt,KNN_PCA_O2_condition_qt,
+           GMM_har_sam_O2_batch_qt,GMM_har_sam_O2_condition_qt,
+           KNN_har_sam_O2_batch_qt,KNN_har_sam_O2_condition_qt,
+           GMM_har_batch_O2_batch_qt,GMM_har_batch_O2_condition_qt,
+           KNN_har_batch_O2_batch_qt,KNN_har_batch_O2_condition_qt), ncol = 2, byrow = T))
+
+
+R_qt <- data.frame(matrix(c(GMM_PCA_ANS_batch_qt,GMM_PCA_ANS_condition_qt,
+           KNN_PCA_ANS_batch_qt,KNN_PCA_ANS_condition_qt,
+           GMM_har_sam_ANS_batch_qt,GMM_har_sam_ANS_condition_qt,
+           KNN_har_sam_ANS_batch_qt,KNN_har_sam_ANS_condition_qt,
+           GMM_har_batch_ANS_batch_qt,GMM_har_batch_ANS_condition_qt,
+           KNN_har_batch_ANS_batch_qt,KNN_har_batch_ANS_condition_qt), ncol = 2, byrow = T))
+
+colnames(O2_qt) = colnames(R_qt) = c("Low.qt", "High.qt")
+
+```
+
+
+
+```{r}
+GMM_PCA_O2_batch_sd <- sd(GMM_PCA_O2_batch)
+GMM_PCA_O2_condition_sd <- sd(GMM_PCA_O2_condition)
+GMM_PCA_ANS_batch_sd <- sd(GMM_PCA_ANS_batch)
+GMM_PCA_ANS_condition_sd <- sd(GMM_PCA_ANS_condition)
+GMM_har_sam_O2_batch_sd <- sd(GMM_har_sam_O2_batch)
+GMM_har_sam_O2_condition_sd <- sd(GMM_har_sam_O2_condition)
+GMM_har_sam_ANS_batch_sd <- sd(GMM_har_sam_ANS_batch)
+GMM_har_sam_ANS_condition_sd <- sd(GMM_har_sam_ANS_condition)
+GMM_har_batch_O2_batch_sd <- sd(GMM_har_batch_O2_batch)
+GMM_har_batch_O2_condition_sd <- sd(GMM_har_batch_O2_condition)
+GMM_har_batch_ANS_batch_sd <- sd(GMM_har_batch_ANS_batch)
+GMM_har_batch_ANS_condition_sd <- sd(GMM_har_batch_ANS_condition)
+
+KNN_PCA_O2_batch_sd <- sd(KNN_PCA_O2_batch)
+KNN_PCA_O2_condition_sd <- sd(KNN_PCA_O2_condition)
+KNN_PCA_ANS_batch_sd <- sd(KNN_PCA_ANS_batch)
+KNN_PCA_ANS_condition_sd <- sd(KNN_PCA_ANS_condition)
+KNN_har_sam_O2_batch_sd <- sd(KNN_har_sam_O2_batch)
+KNN_har_sam_O2_condition_sd <- sd(KNN_har_sam_O2_condition)
+KNN_har_sam_ANS_batch_sd <- sd(KNN_har_sam_ANS_batch)
+KNN_har_sam_ANS_condition_sd <- sd(KNN_har_sam_ANS_condition)
+KNN_har_batch_O2_batch_sd <- sd(KNN_har_batch_O2_batch)
+KNN_har_batch_O2_condition_sd <- sd(KNN_har_batch_O2_condition)
+KNN_har_batch_ANS_batch_sd <- sd(KNN_har_batch_ANS_batch)
+KNN_har_batch_ANS_condition_sd <- sd(KNN_har_batch_ANS_condition)
+
+
+O2_sd <- c(GMM_PCA_O2_batch_sd,GMM_PCA_O2_condition_sd,
+           KNN_PCA_O2_batch_sd,KNN_PCA_O2_condition_sd,
+           GMM_har_sam_O2_batch_sd,GMM_har_sam_O2_condition_sd,
+           KNN_har_sam_O2_batch_sd,KNN_har_sam_O2_condition_sd,
+           GMM_har_batch_O2_batch_sd,GMM_har_batch_O2_condition_sd,
+           KNN_har_batch_O2_batch_sd,KNN_har_batch_O2_condition_sd)
+
+
+R_sd <- c(GMM_PCA_ANS_batch_sd,GMM_PCA_ANS_condition_sd,
+           KNN_PCA_ANS_batch_sd,KNN_PCA_ANS_condition_sd,
+           GMM_har_sam_ANS_batch_sd,GMM_har_sam_ANS_condition_sd,
+           KNN_har_sam_ANS_batch_sd,KNN_har_sam_ANS_condition_sd,
+           GMM_har_batch_ANS_batch_sd,GMM_har_batch_ANS_condition_sd,
+           KNN_har_batch_ANS_batch_sd,KNN_har_batch_ANS_condition_sd)
+
+
+```
+
+```{r}
+O2_summary_fabre <- data.frame(O2_data, data = "Fabre, lung",sd = O2_sd, O2_qt)
+R_summary_fabre <- data.frame(R_data, data = "Fabre, lung", sd = R_sd, R_qt)
+
+save(O2_summary_fabre, R_summary_fabre, file = "../../results/BatchStudy/fabre_stat_summary.Rda")
+```
+
+```{r}
+ggplot(O2_summary_fabre, aes(x = DimReduc, y = Value, group = comb))+
+  geom_point(aes(col = Correction))+
+  geom_line(aes(linetype  = Dens, col = Correction)) +
+    scale_color_manual(values= safe_colorblind_palette)+
+    geom_errorbar(aes(ymin =Low.qt, ymax = High.qt, col = Correction, linetype = Dens))+
+  theme_bw() +
+  facet_grid(Correction~Group+Dens)+
+  ylab("O2 Value")+
+      theme(axis.text.x = element_text(angle = 30, hjust=1))+
+  ggtitle("Fabre Lung data")
+```
+```{r}
+ggplot(R_summary_fabre, aes(x = DimReduc, y = Value, group = comb))+
+  geom_point(aes(col = Correction))+
+  geom_line(aes(linetype  = Dens, col = Correction)) +
+    scale_color_manual(values= safe_colorblind_palette)+
+    geom_errorbar(aes(ymin =Low.qt, ymax = High.qt, col = Correction, linetype = Dens))+
+  theme_bw() +
+  facet_grid(Correction~Group+Dens)+
+  ylab("R Value")+
+      theme(axis.text.x = element_text(angle = 30, hjust=1))+
+  ggtitle("Fabre Lung data")
+```
+
+
+
+```{r}
+load("../../results/BatchStudy/fabre_stat_liver_update.Rda")
+
+
+load("../../results/BatchStudy/fabre_BSdist_stat_liver_update.Rda")
+```
+
+```{r}
+GMM_PCA_O2_batch <- unlist(lapply(stat_list, function(x) x[[1]][[1]]))
+GMM_PCA_O2_condition <- unlist(lapply(stat_list, function(x) x[[1]][[2]]))
+GMM_PCA_ANS_batch <- unlist(lapply(stat_list, function(x) x[[1]][[3]]))
+GMM_PCA_ANS_condition <- unlist(lapply(stat_list, function(x) x[[1]][[4]]))
+
+GMM_har_sam_O2_batch <- unlist(lapply(stat_list, function(x) x[[2]][[1]]))
+GMM_har_sam_O2_condition <- unlist(lapply(stat_list, function(x) x[[2]][[2]]))
+GMM_har_sam_ANS_batch <- unlist(lapply(stat_list, function(x) x[[2]][[3]]))
+GMM_har_sam_ANS_condition <- unlist(lapply(stat_list, function(x) x[[2]][[4]]))
+
+GMM_har_batch_O2_batch <- unlist(lapply(stat_list, function(x) x[[3]][[1]]))
+GMM_har_batch_O2_condition <- unlist(lapply(stat_list, function(x) x[[3]][[2]]))
+GMM_har_batch_ANS_batch <- unlist(lapply(stat_list, function(x) x[[3]][[3]]))
+GMM_har_batch_ANS_condition <- unlist(lapply(stat_list, function(x) x[[3]][[4]]))
+
+
+KNN_PCA_O2_batch <- unlist(lapply(stat_list, function(x) x[[4]][[1]]))
+KNN_PCA_O2_condition <- unlist(lapply(stat_list, function(x) x[[4]][[2]]))
+KNN_PCA_ANS_batch <- unlist(lapply(stat_list, function(x) x[[4]][[3]]))
+KNN_PCA_ANS_condition <- unlist(lapply(stat_list, function(x) x[[4]][[4]]))
+
+KNN_har_sam_O2_batch <- unlist(lapply(stat_list, function(x) x[[5]][[1]]))
+KNN_har_sam_O2_condition <- unlist(lapply(stat_list, function(x) x[[5]][[2]]))
+KNN_har_sam_ANS_batch <- unlist(lapply(stat_list, function(x) x[[5]][[3]]))
+KNN_har_sam_ANS_condition <- unlist(lapply(stat_list, function(x) x[[5]][[4]]))
+
+KNN_har_batch_O2_batch <- unlist(lapply(stat_list, function(x) x[[6]][[1]]))
+KNN_har_batch_O2_condition <- unlist(lapply(stat_list, function(x) x[[6]][[2]]))
+KNN_har_batch_ANS_batch <- unlist(lapply(stat_list, function(x) x[[6]][[3]]))
+KNN_har_batch_ANS_condition <- unlist(lapply(stat_list, function(x) x[[6]][[4]]))
+```
+
+```{r}
+
+GMM_PCA_O2_batch_qt <- quantile(GMM_PCA_O2_batch, c(0.025, 0.975))
+GMM_PCA_O2_condition_qt <- quantile(GMM_PCA_O2_condition, c(0.025, 0.975))
+GMM_PCA_ANS_batch_qt <- quantile(GMM_PCA_ANS_batch, c(0.025, 0.975))
+GMM_PCA_ANS_condition_qt <- quantile(GMM_PCA_ANS_condition, c(0.025, 0.975))
+GMM_har_sam_O2_batch_qt <- quantile(GMM_har_sam_O2_batch, c(0.025, 0.975))
+GMM_har_sam_O2_condition_qt <- quantile(GMM_har_sam_O2_condition, c(0.025, 0.975))
+GMM_har_sam_ANS_batch_qt <- quantile(GMM_har_sam_ANS_batch, c(0.025, 0.975))
+GMM_har_sam_ANS_condition_qt <- quantile(GMM_har_sam_ANS_condition, c(0.025, 0.975))
+GMM_har_batch_O2_batch_qt <- quantile(GMM_har_batch_O2_batch, c(0.025, 0.975))
+GMM_har_batch_O2_condition_qt <- quantile(GMM_har_batch_O2_condition, c(0.025, 0.975))
+GMM_har_batch_ANS_batch_qt <- quantile(GMM_har_batch_ANS_batch, c(0.025, 0.975))
+GMM_har_batch_ANS_condition_qt <- quantile(GMM_har_batch_ANS_condition, c(0.025, 0.975))
+
+KNN_PCA_O2_batch_qt <- quantile(KNN_PCA_O2_batch, c(0.025, 0.975))
+KNN_PCA_O2_condition_qt <- quantile(KNN_PCA_O2_condition, c(0.025, 0.975))
+KNN_PCA_ANS_batch_qt <- quantile(KNN_PCA_ANS_batch, c(0.025, 0.975))
+KNN_PCA_ANS_condition_qt <- quantile(KNN_PCA_ANS_condition, c(0.025, 0.975))
+KNN_har_sam_O2_batch_qt <- quantile(KNN_har_sam_O2_batch, c(0.025, 0.975))
+KNN_har_sam_O2_condition_qt <- quantile(KNN_har_sam_O2_condition, c(0.025, 0.975))
+KNN_har_sam_ANS_batch_qt <- quantile(KNN_har_sam_ANS_batch, c(0.025, 0.975))
+KNN_har_sam_ANS_condition_qt <- quantile(KNN_har_sam_ANS_condition, c(0.025, 0.975))
+KNN_har_batch_O2_batch_qt <- quantile(KNN_har_batch_O2_batch, c(0.025, 0.975))
+KNN_har_batch_O2_condition_qt <- quantile(KNN_har_batch_O2_condition, c(0.025, 0.975))
+KNN_har_batch_ANS_batch_qt <- quantile(KNN_har_batch_ANS_batch, c(0.025, 0.975))
+KNN_har_batch_ANS_condition_qt <- quantile(KNN_har_batch_ANS_condition, c(0.025, 0.975))
+
+
+
+O2_qt <- data.frame(matrix(c(GMM_PCA_O2_batch_qt,GMM_PCA_O2_condition_qt,
+           KNN_PCA_O2_batch_qt,KNN_PCA_O2_condition_qt,
+           GMM_har_sam_O2_batch_qt,GMM_har_sam_O2_condition_qt,
+           KNN_har_sam_O2_batch_qt,KNN_har_sam_O2_condition_qt,
+           GMM_har_batch_O2_batch_qt,GMM_har_batch_O2_condition_qt,
+           KNN_har_batch_O2_batch_qt,KNN_har_batch_O2_condition_qt), ncol = 2, byrow = T))
+
+
+R_qt <- data.frame(matrix(c(GMM_PCA_ANS_batch_qt,GMM_PCA_ANS_condition_qt,
+           KNN_PCA_ANS_batch_qt,KNN_PCA_ANS_condition_qt,
+           GMM_har_sam_ANS_batch_qt,GMM_har_sam_ANS_condition_qt,
+           KNN_har_sam_ANS_batch_qt,KNN_har_sam_ANS_condition_qt,
+           GMM_har_batch_ANS_batch_qt,GMM_har_batch_ANS_condition_qt,
+           KNN_har_batch_ANS_batch_qt,KNN_har_batch_ANS_condition_qt), ncol = 2, byrow = T))
+
+colnames(O2_qt) = colnames(R_qt) = c("Low.qt", "High.qt")
+
+GMM_PCA_O2_batch_sd <- sd(GMM_PCA_O2_batch)
+GMM_PCA_O2_condition_sd <- sd(GMM_PCA_O2_condition)
+GMM_PCA_ANS_batch_sd <- sd(GMM_PCA_ANS_batch)
+GMM_PCA_ANS_condition_sd <- sd(GMM_PCA_ANS_condition)
+GMM_har_sam_O2_batch_sd <- sd(GMM_har_sam_O2_batch)
+GMM_har_sam_O2_condition_sd <- sd(GMM_har_sam_O2_condition)
+GMM_har_sam_ANS_batch_sd <- sd(GMM_har_sam_ANS_batch)
+GMM_har_sam_ANS_condition_sd <- sd(GMM_har_sam_ANS_condition)
+GMM_har_batch_O2_batch_sd <- sd(GMM_har_batch_O2_batch)
+GMM_har_batch_O2_condition_sd <- sd(GMM_har_batch_O2_condition)
+GMM_har_batch_ANS_batch_sd <- sd(GMM_har_batch_ANS_batch)
+GMM_har_batch_ANS_condition_sd <- sd(GMM_har_batch_ANS_condition)
+
+KNN_PCA_O2_batch_sd <- sd(KNN_PCA_O2_batch)
+KNN_PCA_O2_condition_sd <- sd(KNN_PCA_O2_condition)
+KNN_PCA_ANS_batch_sd <- sd(KNN_PCA_ANS_batch)
+KNN_PCA_ANS_condition_sd <- sd(KNN_PCA_ANS_condition)
+KNN_har_sam_O2_batch_sd <- sd(KNN_har_sam_O2_batch)
+KNN_har_sam_O2_condition_sd <- sd(KNN_har_sam_O2_condition)
+KNN_har_sam_ANS_batch_sd <- sd(KNN_har_sam_ANS_batch)
+KNN_har_sam_ANS_condition_sd <- sd(KNN_har_sam_ANS_condition)
+KNN_har_batch_O2_batch_sd <- sd(KNN_har_batch_O2_batch)
+KNN_har_batch_O2_condition_sd <- sd(KNN_har_batch_O2_condition)
+KNN_har_batch_ANS_batch_sd <- sd(KNN_har_batch_ANS_batch)
+KNN_har_batch_ANS_condition_sd <- sd(KNN_har_batch_ANS_condition)
+
+
+
+
+O2_sd <- c(GMM_PCA_O2_batch_sd,GMM_PCA_O2_condition_sd,
+           KNN_PCA_O2_batch_sd,KNN_PCA_O2_condition_sd,
+           GMM_har_sam_O2_batch_sd,GMM_har_sam_O2_condition_sd,
+           KNN_har_sam_O2_batch_sd,KNN_har_sam_O2_condition_sd,
+           GMM_har_batch_O2_batch_sd,GMM_har_batch_O2_condition_sd,
+           KNN_har_batch_O2_batch_sd,KNN_har_batch_O2_condition_sd)
+
+
+R_sd <- c(GMM_PCA_ANS_batch_sd,GMM_PCA_ANS_condition_sd,
+           KNN_PCA_ANS_batch_sd,KNN_PCA_ANS_condition_sd,
+           GMM_har_sam_ANS_batch_sd,GMM_har_sam_ANS_condition_sd,
+           KNN_har_sam_ANS_batch_sd,KNN_har_sam_ANS_condition_sd,
+           GMM_har_batch_ANS_batch_sd,GMM_har_batch_ANS_condition_sd,
+           KNN_har_batch_ANS_batch_sd,KNN_har_batch_ANS_condition_sd)
+
+
+O2_summary_fabre <- data.frame(O2_data, data = "Fabre, liver",sd = O2_sd, O2_qt)
+R_summary_fabre <- data.frame(R_data, data = "Fabre, liver", sd = R_sd, R_qt)
+
+save(O2_summary_fabre, R_summary_fabre, file = "../../results/BatchStudy/fabre_liver_stat_summary_update.Rda")
+```
